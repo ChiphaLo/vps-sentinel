@@ -509,6 +509,22 @@ fn positive_cases() -> Vec<PositiveCase> {
                 .with_field("exe", "/usr/sbin/setcap")
                 .with_field("comm", "setcap")],
         ),
+        positive(
+            "AUDIT-005",
+            "audit kernel module manipulation",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "sudo modprobe dummy")
+                .with_field("exe", "/usr/sbin/modprobe")
+                .with_field("comm", "modprobe")],
+        ),
+        positive(
+            "AUDIT-006",
+            "audit logging disable",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "systemctl stop auditd")
+                .with_field("exe", "/usr/bin/systemctl")
+                .with_field("comm", "systemctl")],
+        ),
     ]
 }
 
@@ -860,6 +876,22 @@ fn negative_cases() -> Vec<NegativeCase> {
                 .with_field("argv", "chmod 0644 /tmp/file")
                 .with_field("exe", "/usr/bin/chmod")
                 .with_field("comm", "chmod")],
+        ),
+        negative(
+            "AUDIT-005",
+            "audit ordinary service command",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "systemctl restart nginx")
+                .with_field("exe", "/usr/bin/systemctl")
+                .with_field("comm", "systemctl")],
+        ),
+        negative(
+            "AUDIT-006",
+            "audit ordinary logging status",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "systemctl status auditd")
+                .with_field("exe", "/usr/bin/systemctl")
+                .with_field("comm", "systemctl")],
         ),
     ]
 }
