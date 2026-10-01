@@ -268,7 +268,7 @@ fn critical_file_changed(
         RESOURCE_DRIFT_DEDUP_KEYS,
     )
     .with_impact(vec![
-        "Changes to identity, sudo, SSH, cron, or systemd files may affect persistence or privilege.".to_string(),
+        "Changes to identity, sudo, SSH, PAM, polkit, startup, kernel-module, or linker configuration may affect persistence or privilege.".to_string(),
     ])
     .with_recommendations(vec![
         "Review the file diff from a trusted shell session.".to_string(),
@@ -490,6 +490,9 @@ fn is_critical_path(path: &str) -> bool {
         "/etc/sudoers",
         "/etc/sudoers.d/",
         "/etc/ssh/",
+        "/etc/pam.d/",
+        "/etc/security/",
+        "/etc/polkit-1/rules.d/",
         "/etc/systemd/system/",
         "/etc/crontab",
         "/etc/cron.d/",
@@ -498,6 +501,16 @@ fn is_critical_path(path: &str) -> bool {
         "/etc/profile.d/",
         "/etc/bash.bashrc",
         "/etc/ld.so.preload",
+        "/etc/ld.so.conf",
+        "/etc/ld.so.conf.d/",
+        "/etc/modules",
+        "/etc/modules-load.d/",
+        "/etc/modprobe.d/",
+        "/etc/sysctl.conf",
+        "/etc/sysctl.d/",
+        "/etc/udev/rules.d/",
+        "/etc/apt/sources.list",
+        "/etc/apt/sources.list.d/",
     ]
     .iter()
     .any(|prefix| path == *prefix || path.starts_with(prefix))
