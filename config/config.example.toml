@@ -156,6 +156,12 @@ enabled = true
 alert_on_privileged_container = true
 alert_on_docker_socket_mount = true
 alert_on_host_network = true
+alert_on_host_pid = true
+alert_on_host_root_mount = true
+alert_on_dangerous_capabilities = true
+docker_command = "docker"
+command_timeout_seconds = 3
+inspect_max_containers = 128
 
 [notifications]
 request_timeout_seconds = 15
