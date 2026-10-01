@@ -411,6 +411,42 @@ fn positive_cases() -> Vec<PositiveCase> {
                 .with_field("exists", "true")],
         ),
         positive(
+            "DOCKER-002",
+            "privileged docker container",
+            vec![docker_container()
+                .with_field("privileged", "true")],
+        ),
+        positive(
+            "DOCKER-003",
+            "docker socket mounted into container",
+            vec![docker_container()
+                .with_field("docker_socket_mount", "true")],
+        ),
+        positive(
+            "DOCKER-004",
+            "docker host network",
+            vec![docker_container()
+                .with_field("network_mode", "host")],
+        ),
+        positive(
+            "DOCKER-005",
+            "docker host pid",
+            vec![docker_container()
+                .with_field("pid_mode", "host")],
+        ),
+        positive(
+            "DOCKER-006",
+            "docker dangerous capability",
+            vec![docker_container()
+                .with_field("cap_add", "SYS_ADMIN")],
+        ),
+        positive(
+            "DOCKER-007",
+            "docker host root rw mount",
+            vec![docker_container()
+                .with_field("host_root_mount_rw", "true")],
+        ),
+        positive(
             "ROOTKIT-003",
             "ld preload active entry",
             vec![RawEvent::new("rootkit", "ld_preload_present")
@@ -456,6 +492,22 @@ fn positive_cases() -> Vec<PositiveCase> {
                 .with_field("argv", "sudo sh -c id")
                 .with_field("exe", "/usr/bin/sudo")
                 .with_field("comm", "sudo")],
+        ),
+        positive(
+            "AUDIT-003",
+            "audit credential file access",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "cat /etc/shadow")
+                .with_field("exe", "/usr/bin/cat")
+                .with_field("comm", "cat")],
+        ),
+        positive(
+            "AUDIT-004",
+            "audit privilege persistence",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "setcap cap_setuid+ep /tmp/helper")
+                .with_field("exe", "/usr/sbin/setcap")
+                .with_field("comm", "setcap")],
         ),
     ]
 }
@@ -723,6 +775,36 @@ fn negative_cases() -> Vec<NegativeCase> {
         ),
         negative("DOCKER-001", "no docker event", Vec::new()),
         negative(
+            "DOCKER-002",
+            "ordinary docker container is not privileged",
+            vec![docker_container()],
+        ),
+        negative(
+            "DOCKER-003",
+            "ordinary docker container has no socket mount",
+            vec![docker_container()],
+        ),
+        negative(
+            "DOCKER-004",
+            "ordinary docker bridge network",
+            vec![docker_container()],
+        ),
+        negative(
+            "DOCKER-005",
+            "ordinary docker pid namespace",
+            vec![docker_container()],
+        ),
+        negative(
+            "DOCKER-006",
+            "ordinary docker capabilities",
+            vec![docker_container().with_field("cap_add", "NET_BIND_SERVICE")],
+        ),
+        negative(
+            "DOCKER-007",
+            "ordinary docker mount set",
+            vec![docker_container()],
+        ),
+        negative(
             "ROOTKIT-003",
             "empty ld preload",
             vec![RawEvent::new("rootkit", "ld_preload_present")
@@ -762,6 +844,22 @@ fn negative_cases() -> Vec<NegativeCase> {
                 .with_field("argv", "sudo systemctl status nginx")
                 .with_field("exe", "/usr/bin/sudo")
                 .with_field("comm", "sudo")],
+        ),
+        negative(
+            "AUDIT-003",
+            "audit ordinary file read",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "cat /etc/hostname")
+                .with_field("exe", "/usr/bin/cat")
+                .with_field("comm", "cat")],
+        ),
+        negative(
+            "AUDIT-004",
+            "audit ordinary chmod",
+            vec![RawEvent::new("auditd", "audit_exec")
+                .with_field("argv", "chmod 0644 /tmp/file")
+                .with_field("exe", "/usr/bin/chmod")
+                .with_field("comm", "chmod")],
         ),
     ]
 }
@@ -877,6 +975,20 @@ fn ssh_config(key: &str, value: &str) -> RawEvent {
         .with_field("path", "/etc/ssh/sshd_config")
         .with_field("key", key)
         .with_field("value", value)
+}
+
+fn docker_container() -> RawEvent {
+    RawEvent::new("docker", "docker_container")
+        .with_field("container_id", "abc123")
+        .with_field("name", "worker")
+        .with_field("image", "example/worker:latest")
+        .with_field("privileged", "false")
+        .with_field("network_mode", "bridge")
+        .with_field("pid_mode", "")
+        .with_field("cap_add", "")
+        .with_field("docker_socket_mount", "false")
+        .with_field("host_root_mount_rw", "false")
+        .with_field("mount_samples", "")
 }
 
 fn log_event(path: &str, file_type: &str, size: &str) -> RawEvent {
