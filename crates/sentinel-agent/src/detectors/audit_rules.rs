@@ -40,6 +40,20 @@ impl Detector for AuditDetector {
                 Severity::High,
                 "auditd captured a command that grants SUID/SGID or file capabilities.",
             ),
+            RuleMetadata::new(
+                "AUDIT-005",
+                "Kernel module manipulation command",
+                Category::Rootkit,
+                Severity::Medium,
+                "auditd captured loading or unloading a kernel module.",
+            ),
+            RuleMetadata::new(
+                "AUDIT-006",
+                "Audit or logging service disable command",
+                Category::System,
+                Severity::High,
+                "auditd captured a command that disables auditd or a core logging service.",
+            ),
         ]
     }
 
@@ -59,6 +73,12 @@ impl Detector for AuditDetector {
                 findings.push(finding);
             }
             if let Some(finding) = audit_privilege_persistence(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_kernel_module_manipulation(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_logging_disable(event, ctx) {
                 findings.push(finding);
             }
         }
@@ -234,6 +254,88 @@ fn privilege_persistence_technique(argv: &str) -> Option<&'static str> {
     None
 }
 
+fn audit_kernel_module_manipulation(
+    event: &RawEvent,
+    ctx: &DetectContext,
+) -> Option<Finding> {
+    let argv = audit_command(event);
+    let tool = kernel_module_tool(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Kernel module manipulation command",
+            "A command captured by auditd loaded or unloaded a kernel module.",
+            Severity::Medium,
+            Category::Rootkit,
+            "AUDIT-005",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("kernel_module_tool", tool),
+            evidence("risk_reason", "kernel module state was explicitly changed"),
+            evidence("risk_score", "60"),
+        ]))
+        .with_recommendations(vec![
+            "Confirm the module change matches expected driver or maintenance activity.".to_string(),
+            "If unexpected, inspect the module path, signer, package ownership, and recent privilege activity.".to_string(),
+        ]),
+    )
+}
+
+fn audit_logging_disable(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    if !logging_disable_command(&argv) {
+        return None;
+    }
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Audit or logging service disable command",
+            "A command captured by auditd appears to disable auditing or a core logging service.",
+            Severity::High,
+            Category::System,
+            "AUDIT-006",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("risk_reason", "security logging was explicitly disabled"),
+            evidence("risk_score", "90"),
+        ]))
+        .with_impact(vec![
+            "Disabling audit or logging reduces visibility into subsequent attacker activity.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Verify the maintenance context immediately and restore logging if the action was not expected.".to_string(),
+            "Preserve remaining logs and correlate with privilege, process, and persistence findings.".to_string(),
+        ]),
+    )
+}
+
+fn kernel_module_tool(argv: &str) -> Option<&'static str> {
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    for token in tokens.iter().take(3) {
+        match token_basename(token).as_str() {
+            "insmod" => return Some("insmod"),
+            "modprobe" => return Some("modprobe"),
+            "rmmod" => return Some("rmmod"),
+            _ => {}
+        }
+    }
+    None
+}
+
+fn logging_disable_command(argv: &str) -> bool {
+    let lowered = argv.to_ascii_lowercase();
+    lowered.contains("auditctl -e 0")
+        || lowered.contains("auditctl -e=0")
+        || lowered.contains("systemctl stop auditd")
+        || lowered.contains("systemctl disable auditd")
+        || lowered.contains("service auditd stop")
+        || lowered.contains("systemctl stop rsyslog")
+        || lowered.contains("systemctl disable rsyslog")
+        || lowered.contains("systemctl stop systemd-journald")
+}
+
 fn audit_common_evidence(event: &RawEvent, argv: &str, mut extra: Vec<Evidence>) -> Vec<Evidence> {
     let mut items = vec![
         evidence("argv", argv),
@@ -390,6 +492,36 @@ mod tests {
         assert!(findings
             .iter()
             .any(|finding| finding.rule_id == "AUDIT-004"));
+    }
+
+    #[test]
+    fn detects_kernel_module_manipulation() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "sudo modprobe dummy")
+            .with_field("exe", "/usr/sbin/modprobe")
+            .with_field("comm", "modprobe");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-005"));
+    }
+
+    #[test]
+    fn detects_logging_disable_command() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "systemctl stop auditd")
+            .with_field("exe", "/usr/bin/systemctl")
+            .with_field("comm", "systemctl");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-006"));
     }
 
     #[test]
