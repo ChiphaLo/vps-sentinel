@@ -2,6 +2,7 @@ use crate::baseline::semantic;
 use crate::collectors::{CollectContext, Collector};
 use crate::utils::fs::{hash_file_limited, path_string};
 use async_trait::async_trait;
+use glob::glob;
 use sentinel_core::{RawEvent, SentinelResult};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -29,6 +30,7 @@ impl Collector for PersistenceCollector {
         }
         if ctx.config.persistence.monitor_shell_profile {
             collect_files(ctx, shell_profile_paths(), "shell_profile", &mut events);
+            collect_files(ctx, startup_paths(), "startup", &mut events);
         }
         if ctx.config.persistence.monitor_ld_preload {
             collect_files(
@@ -49,20 +51,22 @@ fn collect_files(
     events: &mut Vec<RawEvent>,
 ) {
     for configured in paths {
-        let path = ctx.resolve(&configured);
-        if !path.exists() {
-            continue;
-        }
-        if path.is_file() {
-            collect_file(&path, persistence_type, events);
-        } else if path.is_dir() {
-            for entry in WalkDir::new(&path)
-                .max_depth(2)
-                .into_iter()
-                .filter_map(Result::ok)
-            {
-                if entry.file_type().is_file() {
-                    collect_file(entry.path(), persistence_type, events);
+        let resolved = ctx.resolve(&configured);
+        for path in expand_path(&resolved) {
+            if !path.exists() {
+                continue;
+            }
+            if path.is_file() {
+                collect_file(&path, persistence_type, events);
+            } else if path.is_dir() {
+                for entry in WalkDir::new(&path)
+                    .max_depth(2)
+                    .into_iter()
+                    .filter_map(Result::ok)
+                {
+                    if entry.file_type().is_file() {
+                        collect_file(entry.path(), persistence_type, events);
+                    }
                 }
             }
         }
@@ -100,6 +104,16 @@ fn collect_file(path: &Path, persistence_type: &str, events: &mut Vec<RawEvent>)
     events.push(event);
 }
 
+fn expand_path(path: &Path) -> Vec<PathBuf> {
+    let pattern = path_string(path);
+    if pattern.contains('*') {
+        return glob(&pattern)
+            .map(|paths| paths.filter_map(Result::ok).collect())
+            .unwrap_or_default();
+    }
+    vec![path.to_path_buf()]
+}
+
 fn cron_paths() -> Vec<PathBuf> {
     vec![
         PathBuf::from("/etc/crontab"),
@@ -115,6 +129,8 @@ fn systemd_paths() -> Vec<PathBuf> {
         PathBuf::from("/etc/systemd/system"),
         PathBuf::from("/lib/systemd/system"),
         PathBuf::from("/usr/lib/systemd/system"),
+        PathBuf::from("/root/.config/systemd/user"),
+        PathBuf::from("/home/*/.config/systemd/user"),
     ]
 }
 
@@ -123,6 +139,22 @@ fn shell_profile_paths() -> Vec<PathBuf> {
         PathBuf::from("/etc/profile"),
         PathBuf::from("/etc/profile.d"),
         PathBuf::from("/etc/bash.bashrc"),
+        PathBuf::from("/root/.profile"),
+        PathBuf::from("/root/.bash_profile"),
+        PathBuf::from("/root/.bashrc"),
+        PathBuf::from("/root/.zshrc"),
+        PathBuf::from("/home/*/.profile"),
+        PathBuf::from("/home/*/.bash_profile"),
+        PathBuf::from("/home/*/.bashrc"),
+        PathBuf::from("/home/*/.zshrc"),
+    ]
+}
+
+fn startup_paths() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/etc/rc.local"),
+        PathBuf::from("/etc/init.d"),
+        PathBuf::from("/etc/udev/rules.d"),
     ]
 }
 
