@@ -70,7 +70,8 @@ impl Collector for DockerCollector {
 fn parse_container_inspect(text: &str) -> Option<RawEvent> {
     let value: Value = serde_json::from_str(text).ok()?;
     let item = value.as_array()?.first()?;
-    let host = item.get("HostConfig").unwrap_or(&Value::Null);
+    let null_host = Value::Null;
+    let host = item.get("HostConfig").unwrap_or(&null_host);
 
     let container_id = item.get("Id").and_then(Value::as_str).unwrap_or_default();
     let name = item
