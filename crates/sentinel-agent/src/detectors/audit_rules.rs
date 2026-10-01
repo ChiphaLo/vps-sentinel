@@ -26,6 +26,20 @@ impl Detector for AuditDetector {
                 Severity::Medium,
                 "auditd captured sudo, su, or pkexec launching a non-interactive command shell.",
             ),
+            RuleMetadata::new(
+                "AUDIT-003",
+                "Sensitive credential file access command",
+                Category::Privilege,
+                Severity::High,
+                "auditd captured a command explicitly reading or copying a high-value credential file.",
+            ),
+            RuleMetadata::new(
+                "AUDIT-004",
+                "Privilege persistence command",
+                Category::Privilege,
+                Severity::High,
+                "auditd captured a command that grants SUID/SGID or file capabilities.",
+            ),
         ]
     }
 
@@ -39,6 +53,12 @@ impl Detector for AuditDetector {
                 findings.push(finding);
             }
             if let Some(finding) = audit_privilege_execution(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_sensitive_credential_access(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_privilege_persistence(event, ctx) {
                 findings.push(finding);
             }
         }
@@ -104,6 +124,114 @@ fn audit_privilege_execution(event: &RawEvent, ctx: &DetectContext) -> Option<Fi
             "Confirm the session, parent process, and operator identity around this audit record.".to_string(),
         ]),
     )
+}
+
+fn audit_sensitive_credential_access(
+    event: &RawEvent,
+    ctx: &DetectContext,
+) -> Option<Finding> {
+    let argv = audit_command(event);
+    let target = sensitive_credential_target(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Sensitive credential file access command",
+            "A command captured by auditd explicitly referenced a high-value local credential file.",
+            Severity::High,
+            Category::Privilege,
+            "AUDIT-003",
+            target,
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("credential_target", target),
+            evidence("risk_reason", "command explicitly referenced a sensitive credential path"),
+            evidence("risk_score", "80"),
+        ]))
+        .with_impact(vec![
+            "Credential material can be used for privilege escalation, persistence, or lateral movement.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Confirm the operator and purpose of the access.".to_string(),
+            "If unexpected, rotate affected credentials and review subsequent authentication activity.".to_string(),
+        ]),
+    )
+}
+
+fn audit_privilege_persistence(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    let technique = privilege_persistence_technique(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Privilege persistence command",
+            "A command captured by auditd appears to grant SUID/SGID permissions or Linux file capabilities.",
+            Severity::High,
+            Category::Privilege,
+            "AUDIT-004",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("privilege_persistence_technique", technique),
+            evidence("risk_reason", "command can create a privileged executable"),
+            evidence("risk_score", "85"),
+        ]))
+        .with_impact(vec![
+            "Unexpected SUID/SGID bits or file capabilities can provide durable privilege escalation.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Verify the target file, package ownership, and change ticket before accepting the change.".to_string(),
+            "Remove unexpected privilege bits or capabilities after preserving evidence.".to_string(),
+        ]),
+    )
+}
+
+fn sensitive_credential_target(argv: &str) -> Option<&'static str> {
+    let lowered = argv.to_ascii_lowercase();
+    let read_like = [
+        "cat ", "head ", "tail ", "less ", "more ", "grep ", "awk ", "sed ",
+        "cp ", "scp ", "rsync ", "tar ", "base64 ", "xxd ",
+    ]
+    .iter()
+    .any(|tool| lowered.starts_with(tool) || lowered.contains(&format!(" {tool}")));
+    if !read_like {
+        return None;
+    }
+
+    const TARGETS: &[(&str, &str)] = &[
+        ("/etc/shadow", "/etc/shadow"),
+        ("/etc/gshadow", "/etc/gshadow"),
+        ("/root/.ssh/id_", "root SSH private key"),
+        ("/.ssh/id_", "SSH private key"),
+        ("/.aws/credentials", "AWS credentials"),
+        ("/.config/gcloud/", "Google Cloud credentials"),
+        ("/.kube/config", "Kubernetes credentials"),
+    ];
+    TARGETS
+        .iter()
+        .find(|(needle, _)| lowered.contains(needle))
+        .map(|(_, label)| *label)
+}
+
+fn privilege_persistence_technique(argv: &str) -> Option<&'static str> {
+    let lowered = argv.to_ascii_lowercase();
+    if lowered.starts_with("setcap ") || lowered.contains(" setcap ") {
+        return Some("file_capability");
+    }
+    if lowered.starts_with("chmod ") || lowered.contains(" chmod ") {
+        let suid_markers = [" u+s", " g+s", " +s", " 4755", " 6755", " 4777", " 6777"];
+        if suid_markers.iter().any(|marker| lowered.contains(marker)) {
+            return Some("suid_sgid");
+        }
+    }
+    if lowered.starts_with("install ") || lowered.contains(" install ") {
+        if [" -m 4755", " -m 6755", " --mode=4755", " --mode=6755"]
+            .iter()
+            .any(|marker| lowered.contains(marker))
+        {
+            return Some("suid_sgid");
+        }
+    }
+    None
 }
 
 fn audit_common_evidence(event: &RawEvent, argv: &str, mut extra: Vec<Evidence>) -> Vec<Evidence> {
@@ -232,6 +360,36 @@ mod tests {
         assert!(findings
             .iter()
             .any(|finding| finding.rule_id == "AUDIT-002"));
+    }
+
+    #[test]
+    fn detects_sensitive_credential_read() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "cat /etc/shadow")
+            .with_field("exe", "/usr/bin/cat")
+            .with_field("comm", "cat");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-003"));
+    }
+
+    #[test]
+    fn detects_setcap_persistence() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "setcap cap_setuid+ep /tmp/helper")
+            .with_field("exe", "/usr/sbin/setcap")
+            .with_field("comm", "setcap");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-004"));
     }
 
     #[test]
