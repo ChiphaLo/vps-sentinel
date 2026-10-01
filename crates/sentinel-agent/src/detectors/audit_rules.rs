@@ -146,10 +146,7 @@ fn audit_privilege_execution(event: &RawEvent, ctx: &DetectContext) -> Option<Fi
     )
 }
 
-fn audit_sensitive_credential_access(
-    event: &RawEvent,
-    ctx: &DetectContext,
-) -> Option<Finding> {
+fn audit_sensitive_credential_access(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
     let argv = audit_command(event);
     let target = sensitive_credential_target(&argv)?;
     Some(
@@ -206,58 +203,119 @@ fn audit_privilege_persistence(event: &RawEvent, ctx: &DetectContext) -> Option<
 }
 
 fn sensitive_credential_target(argv: &str) -> Option<&'static str> {
-    let lowered = argv.to_ascii_lowercase();
-    let read_like = [
-        "cat ", "head ", "tail ", "less ", "more ", "grep ", "awk ", "sed ",
-        "cp ", "scp ", "rsync ", "tar ", "base64 ", "xxd ",
-    ]
-    .iter()
-    .any(|tool| lowered.starts_with(tool) || lowered.contains(&format!(" {tool}")));
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    let read_like = tokens.iter().any(|token| {
+        matches!(
+            token_basename(token).as_str(),
+            "cat"
+                | "head"
+                | "tail"
+                | "less"
+                | "more"
+                | "grep"
+                | "awk"
+                | "sed"
+                | "cp"
+                | "scp"
+                | "rsync"
+                | "tar"
+                | "base64"
+                | "xxd"
+        )
+    });
     if !read_like {
         return None;
     }
 
-    const TARGETS: &[(&str, &str)] = &[
-        ("/etc/shadow", "/etc/shadow"),
-        ("/etc/gshadow", "/etc/gshadow"),
-        ("/root/.ssh/id_", "root SSH private key"),
-        ("/.ssh/id_", "SSH private key"),
-        ("/.aws/credentials", "AWS credentials"),
-        ("/.config/gcloud/", "Google Cloud credentials"),
-        ("/.kube/config", "Kubernetes credentials"),
-    ];
-    TARGETS
-        .iter()
-        .find(|(needle, _)| lowered.contains(needle))
-        .map(|(_, label)| *label)
-}
-
-fn privilege_persistence_technique(argv: &str) -> Option<&'static str> {
-    let lowered = argv.to_ascii_lowercase();
-    if lowered.starts_with("setcap ") || lowered.contains(" setcap ") {
-        return Some("file_capability");
-    }
-    if lowered.starts_with("chmod ") || lowered.contains(" chmod ") {
-        let suid_markers = [" u+s", " g+s", " +s", " 4755", " 6755", " 4777", " 6777"];
-        if suid_markers.iter().any(|marker| lowered.contains(marker)) {
-            return Some("suid_sgid");
+    for token in tokens {
+        let path = token.trim_matches(['"', '\'', ';', '(', ')']);
+        if matches!(path, "/etc/shadow" | "/etc/gshadow") {
+            return Some(if path == "/etc/shadow" {
+                "/etc/shadow"
+            } else {
+                "/etc/gshadow"
+            });
         }
-    }
-    if lowered.starts_with("install ") || lowered.contains(" install ") {
-        if [" -m 4755", " -m 6755", " --mode=4755", " --mode=6755"]
-            .iter()
-            .any(|marker| lowered.contains(marker))
-        {
-            return Some("suid_sgid");
+        if path.contains("/.ssh/id_") && !path.ends_with(".pub") {
+            return Some(if path.starts_with("/root/.ssh/id_") {
+                "root SSH private key"
+            } else {
+                "SSH private key"
+            });
+        }
+        if path.ends_with("/.aws/credentials") {
+            return Some("AWS credentials");
+        }
+        if path.contains("/.config/gcloud/") {
+            return Some("Google Cloud credentials");
+        }
+        if path.ends_with("/.kube/config") {
+            return Some("Kubernetes credentials");
         }
     }
     None
 }
 
-fn audit_kernel_module_manipulation(
-    event: &RawEvent,
-    ctx: &DetectContext,
-) -> Option<Finding> {
+fn privilege_persistence_technique(argv: &str) -> Option<&'static str> {
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    for (index, token) in tokens.iter().enumerate() {
+        let args = &tokens[index + 1..];
+        match token_basename(token).as_str() {
+            "setcap" if !args.iter().any(|arg| matches!(*arg, "-r" | "-v")) => {
+                if args
+                    .iter()
+                    .any(|arg| arg.contains('+') || arg.contains('='))
+                {
+                    return Some("file_capability");
+                }
+            }
+            "chmod" => {
+                if args
+                    .iter()
+                    .any(|arg| *arg == "--reference" || arg.starts_with("--reference="))
+                {
+                    continue;
+                }
+                if args
+                    .iter()
+                    .find(|arg| !arg.starts_with('-'))
+                    .is_some_and(|mode| grants_privilege_bits(mode))
+                {
+                    return Some("suid_sgid");
+                }
+            }
+            "install" => {
+                for (index, arg) in args.iter().enumerate() {
+                    let mode = if matches!(*arg, "-m" | "--mode") {
+                        args.get(index + 1).copied()
+                    } else {
+                        arg.strip_prefix("--mode=")
+                            .or_else(|| arg.strip_prefix("-m"))
+                    };
+                    if mode.is_some_and(grants_privilege_bits) {
+                        return Some("suid_sgid");
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+fn grants_privilege_bits(mode: &str) -> bool {
+    let mode = mode.trim_matches(['"', '\'']);
+    if let Ok(bits) = u16::from_str_radix(mode, 8) {
+        return bits <= 0o7777 && bits & 0o6000 != 0;
+    }
+    mode.split(',').any(|clause| {
+        clause
+            .split_once(['+', '='])
+            .is_some_and(|(_, permissions)| permissions.contains('s'))
+    })
+}
+
+fn audit_kernel_module_manipulation(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
     let argv = audit_command(event);
     let tool = kernel_module_tool(&argv)?;
     Some(
@@ -429,7 +487,7 @@ fn token_basename(token: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::AuditDetector;
+    use super::{privilege_persistence_technique, sensitive_credential_target, AuditDetector};
     use crate::detectors::{DetectContext, Detector};
     use sentinel_core::{RawEvent, SentinelConfig};
     use std::sync::Arc;
@@ -492,6 +550,50 @@ mod tests {
         assert!(findings
             .iter()
             .any(|finding| finding.rule_id == "AUDIT-004"));
+    }
+
+    #[test]
+    fn recognizes_numeric_and_symbolic_privilege_modes() {
+        for command in [
+            "/usr/bin/chmod 2755 /tmp/helper",
+            "chmod 02755 /tmp/helper",
+            "chmod a+s /tmp/helper",
+            "chmod u-s,g+s /tmp/helper",
+            "chmod g=rxs /tmp/helper",
+            "install -m2755 /tmp/helper /opt/helper",
+            "install --mode=4750 /tmp/helper /opt/helper",
+        ] {
+            assert_eq!(
+                privilege_persistence_technique(command),
+                Some("suid_sgid"),
+                "{command}"
+            );
+        }
+    }
+
+    #[test]
+    fn ignores_privilege_removal_and_modes_used_as_filenames() {
+        for command in [
+            "chmod 0644 4755",
+            "chmod u-s,g-s /tmp/helper",
+            "chmod --reference=4755 /tmp/helper",
+            "setcap -r /tmp/helper",
+            "setcap -v cap_setuid+ep /tmp/helper",
+            "install -m 0755 /tmp/helper /opt/helper",
+        ] {
+            assert_eq!(privilege_persistence_technique(command), None, "{command}");
+        }
+    }
+
+    #[test]
+    fn public_key_exception_does_not_hide_private_key_in_same_command() {
+        assert_eq!(
+            sensitive_credential_target(
+                "/usr/bin/cat /root/.ssh/id_ed25519.pub /root/.ssh/id_ed25519"
+            ),
+            Some("root SSH private key")
+        );
+        assert_eq!(sensitive_credential_target("cat /etc/shadow.example"), None);
     }
 
     #[test]

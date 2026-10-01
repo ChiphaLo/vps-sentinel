@@ -21,7 +21,8 @@ sudo vs reload
 - `[package_manager]`：软件包管理器上下文。近期 apt/dpkg/yum/dnf/pacman/apk 活动会作为文件或持久化漂移证据，帮助复核；它不是 allowlist，也不会自动刷新基线。
 - `[network]`：监听端口策略。`expected_public_ports` 用于预期公网服务端口；`allowlist.listening_ports` 才会完全抑制某端口相关的网络发现。环回、RFC1918、IPv6 ULA 和链路本地监听不会被当作公网暴露。
 - `[persistence]`：cron、systemd、用户级 systemd、系统/用户 shell profile、rc.local、init.d、udev 和 preload 等持久化入口。启动命令会按下载执行、临时路径、自编码 payload、网络执行桥等信号评分。
-- `[docker]`：运行时容器风险检查。会检查 privileged、docker.sock 挂载、host network/PID、危险 Linux capabilities 和宿主根目录可写挂载；`docker_command`、`command_timeout_seconds`、`inspect_max_containers` 用于控制检测方式与开销。
+- `[docker]`：运行时容器风险检查。会检查 privileged、docker.sock 挂载、host network/PID、危险 Linux capabilities（包括 `ALL`）和宿主根目录可写挂载；`docker_command`、`command_timeout_seconds`、`inspect_max_containers` 用于控制检测方式与开销。
+- `[advanced_collectors]`：auditd 与 eBPF 输入。AUDIT 规则需要 `audit_log_paths` 中的执行记录；启用采集器不会自动安装 auditd 或设置内核审计规则。参数解析支持引号内的空格与十六进制编码；`AUDIT-003` 识别显式凭据读取命令并排除 SSH `.pub` 公钥，`AUDIT-004` 识别 capability 授予及数字/符号 SUID、SGID 权限。这些规则检查命令证据，不代表能发现所有文件读取或确认实际权限状态。
 - `[active_response]`：主动封禁策略、nftables/iptables 后端、SSH/Web 阈值、临时/永久封禁升级和可信代理保护。命中 `[allowlist].ips` 或 `[web].trusted_proxy_cidrs` 的 IP 不会成为封禁候选。
 - `[panel]`：推模式面板上报。`url` 和 `secret` 配置签名上报，`node_name` 是非敏感展示身份，`privacy_mode = "strict"` 会移除公网 IP、节点 ID、路径、命令行和原始证据。
 - `[notifications]`：Telegram、邮件、Webhook、ntfy、Gotify、Bark、ServerChan、钉钉、飞书，以及通用通知语言、时区、超时和技术字段显示。钉钉/飞书会检查业务响应码，HTTP 200 但平台拒收时仍会作为通知失败处理。

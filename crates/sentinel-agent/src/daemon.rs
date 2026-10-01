@@ -26,12 +26,50 @@ type ReloadSignal = tokio::signal::unix::Signal;
 #[cfg(not(unix))]
 struct ReloadSignal;
 
+#[cfg(unix)]
+type ShutdownSignal = tokio::signal::unix::Signal;
+
+#[cfg(not(unix))]
+type ShutdownSignal =
+    std::pin::Pin<Box<dyn std::future::Future<Output = std::io::Result<()>> + Send>>;
+
+fn shutdown_signal() -> SentinelResult<ShutdownSignal> {
+    #[cfg(unix)]
+    {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt())
+            .map_err(|err| sentinel_core::SentinelError::io("SIGINT handler", err))
+    }
+    #[cfg(not(unix))]
+    {
+        Ok(Box::pin(tokio::signal::ctrl_c()))
+    }
+}
+
+async fn recv_shutdown_signal(signal: &mut ShutdownSignal) -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        signal.recv().await.ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::BrokenPipe,
+                "shutdown signal stream closed",
+            )
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        signal.as_mut().await
+    }
+}
+
 /// Run the long-lived agent loop until Ctrl-C is received.
 pub async fn run_daemon(
     mut config: SentinelConfig,
     reload_path: Option<PathBuf>,
 ) -> SentinelResult<()> {
     let mut reload_signal = reload_signal();
+    // Keep the receiver alive while collecting so SIGINT is not lost between
+    // scan intervals. Finish the current scan before handling the pending exit.
+    let mut shutdown_signal = shutdown_signal()?;
     let interval = Duration::from_secs(config.agent.scan_interval_seconds);
     info!(seconds = interval.as_secs(), "vps-sentinel daemon started");
     let mut runtime_probe = None;
@@ -64,7 +102,7 @@ pub async fn run_daemon(
         let interval = Duration::from_secs(config.agent.scan_interval_seconds);
         tokio::select! {
             _ = sleep(interval) => {}
-            signal = tokio::signal::ctrl_c() => {
+            signal = recv_shutdown_signal(&mut shutdown_signal) => {
                 match signal {
                     Ok(()) => info!("shutdown signal received"),
                     Err(err) => error!(error = %err, "failed to listen for shutdown signal"),

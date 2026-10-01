@@ -413,38 +413,32 @@ fn positive_cases() -> Vec<PositiveCase> {
         positive(
             "DOCKER-002",
             "privileged docker container",
-            vec![docker_container()
-                .with_field("privileged", "true")],
+            vec![docker_container().with_field("privileged", "true")],
         ),
         positive(
             "DOCKER-003",
             "docker socket mounted into container",
-            vec![docker_container()
-                .with_field("docker_socket_mount", "true")],
+            vec![docker_container().with_field("docker_socket_mount", "true")],
         ),
         positive(
             "DOCKER-004",
             "docker host network",
-            vec![docker_container()
-                .with_field("network_mode", "host")],
+            vec![docker_container().with_field("network_mode", "host")],
         ),
         positive(
             "DOCKER-005",
             "docker host pid",
-            vec![docker_container()
-                .with_field("pid_mode", "host")],
+            vec![docker_container().with_field("pid_mode", "host")],
         ),
         positive(
             "DOCKER-006",
             "docker dangerous capability",
-            vec![docker_container()
-                .with_field("cap_add", "SYS_ADMIN")],
+            vec![docker_container().with_field("cap_add", "SYS_ADMIN")],
         ),
         positive(
             "DOCKER-007",
             "docker host root rw mount",
-            vec![docker_container()
-                .with_field("host_root_mount_rw", "true")],
+            vec![docker_container().with_field("host_root_mount_rw", "true")],
         ),
         positive(
             "ROOTKIT-003",

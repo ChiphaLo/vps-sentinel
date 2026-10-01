@@ -246,7 +246,12 @@ fn dangerous_capabilities(value: &str) -> Vec<String> {
     value
         .split(',')
         .map(str::trim)
-        .filter(|cap| DANGEROUS.iter().any(|dangerous| cap.eq_ignore_ascii_case(dangerous)))
+        .filter(|cap| {
+            cap.eq_ignore_ascii_case("ALL")
+                || DANGEROUS
+                    .iter()
+                    .any(|dangerous| cap.eq_ignore_ascii_case(dangerous))
+        })
         .map(str::to_string)
         .collect()
 }

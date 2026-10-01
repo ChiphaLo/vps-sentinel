@@ -24,11 +24,9 @@ impl Collector for DockerCollector {
             return Ok(Vec::new());
         }
 
-        let mut events = vec![
-            RawEvent::new("docker", "docker_socket")
-                .with_field("path", socket.to_string_lossy().to_string())
-                .with_field("exists", "true"),
-        ];
+        let mut events = vec![RawEvent::new("docker", "docker_socket")
+            .with_field("path", socket.to_string_lossy().to_string())
+            .with_field("exists", "true")];
 
         // Alternate scan roots are used by tests/offline scans. Do not query the
         // host Docker daemon when the collected filesystem is not the live root.
@@ -51,11 +49,9 @@ impl Collector for DockerCollector {
             .filter(|id| !id.is_empty())
             .take(ctx.config.docker.inspect_max_containers)
         {
-            let Some(output) = successful_stdout(
-                &ctx.config.docker.docker_command,
-                &["inspect", id],
-                timeout,
-            ) else {
+            let Some(output) =
+                successful_stdout(&ctx.config.docker.docker_command, &["inspect", id], timeout)
+            else {
                 continue;
             };
             if let Some(event) = parse_container_inspect(&output) {
@@ -113,7 +109,10 @@ fn parse_container_inspect(text: &str) -> Option<RawEvent> {
     let mut mount_samples = Vec::new();
     if let Some(mounts) = item.get("Mounts").and_then(Value::as_array) {
         for mount in mounts {
-            let source = mount.get("Source").and_then(Value::as_str).unwrap_or_default();
+            let source = mount
+                .get("Source")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             let destination = mount
                 .get("Destination")
                 .and_then(Value::as_str)
