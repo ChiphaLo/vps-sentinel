@@ -157,6 +157,23 @@ fn contains_mojibake_marker(text: &str) -> bool {
 fn positive_cases() -> Vec<PositiveCase> {
     vec![
         positive(
+            "FILE-005",
+            "content-preserving suid grant",
+            vec![diff_file("/opt/helper", "file_modified", "same", "same")
+                .with_field("previous_mode_octal", "0755")
+                .with_field("mode_octal", "4755")],
+        ),
+        positive(
+            "FILE-006",
+            "content-preserving capability grant",
+            vec![diff_file("/opt/helper", "file_modified", "same", "same")
+                .with_field("previous_file_capabilities", "none")
+                .with_field(
+                    "file_capabilities",
+                    "0100000200008000000000000000000000000000",
+                )],
+        ),
+        positive(
             "SSH-001",
             "root ssh login",
             vec![ssh_success("root", "publickey")],
@@ -524,6 +541,20 @@ fn positive_cases() -> Vec<PositiveCase> {
 
 fn negative_cases() -> Vec<NegativeCase> {
     vec![
+        negative(
+            "FILE-005",
+            "ordinary permission change",
+            vec![diff_file("/opt/helper", "file_modified", "same", "same")
+                .with_field("previous_mode_octal", "0644")
+                .with_field("mode_octal", "0600")],
+        ),
+        negative(
+            "FILE-006",
+            "unavailable capability observation",
+            vec![diff_file("/opt/helper", "file_modified", "old", "new")
+                .with_field("previous_file_capabilities", "01000002")
+                .with_field("file_capabilities", "")],
+        ),
         negative(
             "SSH-001",
             "non-root ssh login",

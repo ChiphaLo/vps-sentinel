@@ -43,6 +43,16 @@ impl BaselineSnapshot {
                             path.to_string(),
                             FileBaseline {
                                 hash: hash.to_string(),
+                                mode_octal: event
+                                    .field("mode_octal")
+                                    .unwrap_or_default()
+                                    .to_string(),
+                                uid: event.field("uid").unwrap_or_default().to_string(),
+                                gid: event.field("gid").unwrap_or_default().to_string(),
+                                file_capabilities: event
+                                    .field("file_capabilities")
+                                    .unwrap_or_default()
+                                    .to_string(),
                                 size: event.field("size").unwrap_or_default().to_string(),
                                 executable: event
                                     .field("executable")
@@ -162,6 +172,16 @@ pub fn listener_key(event: &RawEvent) -> String {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FileBaseline {
     pub hash: String,
+    #[serde(default)]
+    pub mode_octal: String,
+    #[serde(default)]
+    pub uid: String,
+    #[serde(default)]
+    pub gid: String,
+    /// Linux security.capability xattr as hex; "none" means observed absence.
+    /// Empty means unavailable or an older baseline without this observation.
+    #[serde(default)]
+    pub file_capabilities: String,
     pub size: String,
     pub executable: String,
     pub is_web_path: String,

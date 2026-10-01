@@ -1664,6 +1664,10 @@ mod tests {
                 format!("sentinel-test-{index}"),
                 FileBaseline {
                     hash: "x".repeat(700_000),
+                    mode_octal: String::new(),
+                    uid: String::new(),
+                    gid: String::new(),
+                    file_capabilities: String::new(),
                     size: "700000".to_string(),
                     executable: "false".to_string(),
                     is_web_path: "false".to_string(),

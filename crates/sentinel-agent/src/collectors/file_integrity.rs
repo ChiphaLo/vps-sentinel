@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
 #[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
 const SKIPPED_DIRS: &[&str] = &["node_modules", "vendor", ".git", "cache", ".cache"];
 const MAX_CONTENT_SCAN_BYTES: u64 = 256 * 1024;
@@ -153,6 +153,16 @@ fn file_event(ctx: &CollectContext, path: &Path) -> Option<RawEvent> {
     if let Some(mode) = unix_mode_octal(&metadata) {
         event = event.with_field("mode_octal", mode);
     }
+    #[cfg(unix)]
+    {
+        event = event
+            .with_field("uid", metadata.uid().to_string())
+            .with_field("gid", metadata.gid().to_string());
+    }
+    #[cfg(target_os = "linux")]
+    if let Some(capabilities) = file_capabilities(path) {
+        event = event.with_field("file_capabilities", capabilities);
+    }
     if symlink_metadata.file_type().is_symlink() {
         if let Ok(target) = fs::read_link(path) {
             event = event.with_field("symlink_target", path_string(&target));
@@ -178,6 +188,40 @@ fn semantic_profile(path: &Path, path_text: &str) -> Option<semantic::SemanticPr
         .ok()
         .flatten()?;
     semantic::profile_for_path(path_text, &text)
+}
+
+/// Read one bounded xattr on already monitored files, without spawning getcap.
+#[cfg(target_os = "linux")]
+fn file_capabilities(path: &Path) -> Option<String> {
+    use std::ffi::CString;
+    use std::os::unix::ffi::OsStrExt;
+
+    let path = CString::new(path.as_os_str().as_bytes()).ok()?;
+    let name = b"security.capability\0";
+    let mut bytes = [0_u8; 64];
+    // SAFETY: both strings are NUL-terminated and the buffer length matches the allocation.
+    let length = unsafe {
+        libc::getxattr(
+            path.as_ptr(),
+            name.as_ptr().cast(),
+            bytes.as_mut_ptr().cast(),
+            bytes.len(),
+        )
+    };
+    if length >= 0 {
+        return Some(
+            bytes[..length as usize]
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect(),
+        );
+    }
+    if std::io::Error::last_os_error().raw_os_error() == Some(libc::ENODATA) {
+        Some("none".to_string())
+    } else {
+        // Permission/unsupported errors are unknown, not evidence of removed capabilities.
+        None
+    }
 }
 
 fn file_type_label(symlink_metadata: &fs::Metadata, metadata: &fs::Metadata) -> &'static str {
