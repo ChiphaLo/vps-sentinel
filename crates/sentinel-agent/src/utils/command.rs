@@ -1,7 +1,11 @@
 use std::io::Read;
 use std::process::{Command, Stdio};
+use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
+
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 
 #[derive(Debug, Clone)]
 pub struct CommandOutput {
@@ -10,27 +14,39 @@ pub struct CommandOutput {
 }
 
 pub fn command_output(program: &str, args: &[&str], timeout: Duration) -> Option<CommandOutput> {
-    let mut child = Command::new(program)
+    let mut command = Command::new(program);
+    command
         .args(args)
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
-        .spawn()
-        .ok()?;
+        .stderr(Stdio::null());
+    // Give collectors their own process group so a timeout also terminates
+    // descendants that inherit the stdout pipe.
+    #[cfg(unix)]
+    command.process_group(0);
+    let mut child = command.spawn().ok()?;
 
     let stdout = child.stdout.take();
-    let reader = thread::spawn(move || {
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || {
         let mut buffer = Vec::new();
         if let Some(mut stdout) = stdout {
             let _ = stdout.read_to_end(&mut buffer);
         }
-        String::from_utf8_lossy(&buffer).to_string()
+        let _ = sender.send(String::from_utf8_lossy(&buffer).to_string());
     });
 
     let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
-                let stdout = reader.join().unwrap_or_default();
+                // Exiting the parent does not necessarily close stdout: a
+                // background descendant can still hold it open. Apply the
+                // same deadline to output collection instead of joining it.
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                let Ok(stdout) = receiver.recv_timeout(remaining) else {
+                    terminate_command(&mut child);
+                    return None;
+                };
                 return Some(CommandOutput {
                     status_success: status.success(),
                     stdout,
@@ -38,21 +54,28 @@ pub fn command_output(program: &str, args: &[&str], timeout: Duration) -> Option
             }
             Ok(None) => {
                 if Instant::now() >= deadline {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    let _ = reader.join();
+                    terminate_command(&mut child);
                     return None;
                 }
                 thread::sleep(Duration::from_millis(25));
             }
             Err(_) => {
-                let _ = child.kill();
-                let _ = child.wait();
-                let _ = reader.join();
+                terminate_command(&mut child);
                 return None;
             }
         }
     }
+}
+
+fn terminate_command(child: &mut std::process::Child) {
+    #[cfg(unix)]
+    {
+        // SAFETY: process_group(0) created a group whose ID is this child's PID.
+        // Signal only that collector group, including inherited-pipe holders.
+        unsafe { libc::kill(-(child.id() as libc::pid_t), libc::SIGKILL) };
+    }
+    let _ = child.kill();
+    let _ = child.wait();
 }
 
 pub fn successful_stdout(program: &str, args: &[&str], timeout: Duration) -> Option<String> {

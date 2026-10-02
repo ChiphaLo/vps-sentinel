@@ -19,6 +19,8 @@ jobs:
         run: npm ci
       - name: Panel contract generated files
         run: node scripts/generate-panel-contract.mjs --check
+      - name: Worker protocol and SQLite smoke test
+        run: node tests/panel_worker_smoke.mjs
       - name: Panel UI typecheck
         working-directory: panel/ui
         run: npm run typecheck
