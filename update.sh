@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
-REPO_URL="${REPO_URL:-https://github.com/cryptoli/vps-sentinel.git}"
+REPO_URL="${REPO_URL:-https://github.com/ChiphaLo/vps-sentinel.git}"
 BRANCH="${BRANCH:-main}"
 WORK_DIR="${WORK_DIR:-/opt/vps-sentinel-src}"
 PREFIX="${PREFIX:-/usr/local}"
@@ -610,6 +610,7 @@ post_update() {
 
 checkout_or_update() {
   if [ -d "$WORK_DIR/.git" ]; then
+    git -C "$WORK_DIR" remote set-url origin "$REPO_URL"
     git -C "$WORK_DIR" fetch --prune origin "+refs/heads/$BRANCH:refs/remotes/origin/$BRANCH"
     git -C "$WORK_DIR" checkout -B "$BRANCH" "origin/$BRANCH"
     git -C "$WORK_DIR" reset --hard "origin/$BRANCH"
