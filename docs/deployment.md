@@ -1,6 +1,6 @@
 # Agent Deployment
 
-> **Fork deployment:** These examples install `ChiphaLo/vps-sentinel:feat/security-coverage-phase1` from source. The security changes are not yet in `main`. `REPO_URL`, `BRANCH` and `INSTALL_METHOD` must be passed together; script defaults still refer to upstream. See [fork status](../README.md#fork-and-branch-status) and the [dated validation report](validation-2026-10-01.md).
+> **Fork deployment:** These examples build `ChiphaLo/vps-sentinel:main` from source. Security and reliability changes are merged. Scripts default to this fork and `main`; the examples still pin `REPO_URL`, `BRANCH` and `INSTALL_METHOD` explicitly. No fork release artifact has been published for these changes. See [fork status](../README.md#fork-and-branch-status) and the [dated validation report](validation-2026-10-02.md).
 
 This guide covers installing and operating the `vps-sentinel` agent on Linux VPS hosts. For fleet panel deployment, see [panel-deployment.md](panel-deployment.md).
 
@@ -18,7 +18,7 @@ For a real node, install with the notification channel, panel upload, active res
 
 ```bash
 sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  BRANCH="main" INSTALL_METHOD="source" \
   VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
@@ -33,7 +33,7 @@ sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
   ACTIVE_RESPONSE_ENABLED="no" \
   ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | sh'
 ```
 
 This command enables local detection, Telegram alerts and privacy-redacted panel telemetry. New installations initially leave automatic IP blocking disabled; review findings and trusted-admin allowlists before enabling it. Existing configuration is preserved. If you omit `TELEGRAM_*`, no Telegram messages are sent. If you omit both `PANEL_URL` and `PANEL_SHARED_SECRET`, no panel upload is configured.
@@ -41,7 +41,7 @@ This command enables local detection, Telegram alerts and privacy-redacted panel
 ## Local-Only Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" ACTIVE_RESPONSE_ENABLED="no" ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="main" INSTALL_METHOD="source" ACTIVE_RESPONSE_ENABLED="no" ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
 This command installs the daemon and local detection. New installations start without automatic IP blocking. Telegram, email/webhook notifications and panel upload are not configured; existing configuration is preserved.
@@ -61,9 +61,9 @@ The installer will:
 Use this form when you want Telegram ready immediately:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh -o /tmp/vps-sentinel-install.sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh -o /tmp/vps-sentinel-install.sh
 sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  BRANCH="main" INSTALL_METHOD="source" \
   VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
@@ -75,12 +75,12 @@ Equivalent one-liner:
 
 ```bash
 sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  BRANCH="main" INSTALL_METHOD="source" \
   VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | sh'
 ```
 
 Variable meanings:
@@ -111,7 +111,7 @@ Panel-related variables:
 
 ```bash
 sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-  BRANCH="feat/security-coverage-phase1" \
+  BRANCH="main" \
   INSTALL_METHOD="source" \
   INSTALL_DEPS="yes" \
   ACTIVE_RESPONSE_ENABLED="yes" \
@@ -119,7 +119,7 @@ sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
   ACTIVE_RESPONSE_WEB_PROBE_BLOCK_THRESHOLD="25" \
   ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | sh'
 ```
 
 Common variables:
@@ -147,7 +147,7 @@ Active response variables map to `[active_response]` in `/etc/vps-sentinel/confi
 ## Update
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="main" INSTALL_METHOD="source" sh
 ```
 
 The updater preserves existing config and state. It validates the target binary before replacing the current one. With the explicit `INSTALL_METHOD=source` above, it builds the selected branch and ensures Rust has a default stable toolchain.
@@ -157,12 +157,12 @@ Useful update variables:
 
 ```bash
 sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-  BRANCH="feat/security-coverage-phase1" \
+  BRANCH="main" \
   INSTALL_METHOD="source" \
   VALIDATE_CONFIG="yes" \
   MIGRATE_CONFIG="yes" \
   SYNC_CONFIG_DEFAULTS="yes" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.sh | sh'
 ```
 
 ## Service Operations

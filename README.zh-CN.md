@@ -2,7 +2,7 @@
 
 面向 Linux VPS 的轻量 Rust 入侵信号监控：提供证据与告警、可选来源 IP 封禁，以及多服务器安全面板。
 
-[English](README.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-01.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
+[English](README.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-02.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
 
 [![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -13,10 +13,10 @@
 
 | 分支 | 内容 |
 | --- | --- |
-| `main` | 上游 v0.3.1 基础代码和本 fork 的说明文档。 |
-| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | 安全覆盖与可靠性增强，已验证提交为 [`0d9e53f`](https://github.com/ChiphaLo/vps-sentinel/commit/0d9e53ff51de34932fab814fa878d69b7774a5d3)。 |
+| `main` | 上游 v0.3.1 加本 fork 已验证的安全与可靠性改动，推荐安装此分支。 |
+| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | 开发历史，已通过 [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 合并。 |
 
-安全增强仍在 [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 中，尚未合并到 `main`。要使用这些改动，请明确安装功能分支。下面的命令同时指定 fork 地址和分支；只下载 fork 的安装脚本，不会覆盖脚本内的上游默认地址。
+[PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 已于 2026-10-02 合并，提交为 [`b43a700`](https://github.com/ChiphaLo/vps-sentinel/commit/b43a7006b2eef9e458822d1825fed420b987e034)。合并后的文件树与 hyvps 上实测的候选版本一致。安装与升级脚本现在默认选择此 fork 的 `main`；复用源码目录时，显式 `REPO_URL` 也会更新其 origin 地址。
 
 ## 能监控什么
 
@@ -25,26 +25,27 @@
 | SSH 与账户 | 登录、连续失败、爆破后成功、SSH key 变化、新用户及 UID 0 账户漂移。 |
 | 文件与持久化 | 关键文件、Web 内容、cron、systemd、启动项，以及基线复核和白名单。 |
 | 进程与网络 | 父进程链、可执行文件身份、已知矿工/扫描器身份、监听端口、外连快照及 Web 探测日志。 |
-| Docker 与 audit | 容器配置和 audit 日志；扩展规则位于安全功能分支。 |
+| Docker 与 audit | 容器配置和 audit 日志；扩展规则已包含在 `main`。 |
 | 响应与报告 | 可选 nftables/iptables 来源 IP 封禁、解封与到期维护、攻击指纹和通知渠道。 |
 | 多服务器面板 | 可选 Rust 自建或 Cloudflare Worker/D1 面板、签名上报和隐私脱敏。 |
 
-### 安全功能分支新增内容
+### 本 fork 的改进
 
 - 检查 privileged、宿主命名空间、Docker socket、可写宿主根目录挂载，以及包含 `ALL` 的危险 capability。
 - 保留 audit 参数的引号与空格、解码十六进制 argv；有执行遥测时识别凭据读取、权限持久化、内核模块操作及禁用日志的命令。
 - 检测已监控文件的 SUID/SGID、所有者和 Linux capability 漂移，内容不变也能发现（`FILE-005`、`FILE-006`）。只在原 FIM 路径上读取一个有界 xattr，不增加 Rust 依赖，不做全盘扫描。
 - 扩展 FIM 和持久化路径，保留采集期间收到的 SIGINT，并避免把僵尸/已终止进程误报为活动进程。
+- 修复后代进程占住 stdout 时命令超时失效的问题，以及复用安装/升级源码目录时忽略新仓库地址的问题。
 - 提供小型运行镜像和可复现的隔离攻击响应实验。
 
 ## 安装这个 fork
 
-安全分支已经通过源码验证。命令明确使用 `INSTALL_METHOD=source`，避免下载上游或与指定分支无关的 release 二进制。
+已合并的代码通过了源码构建验证。请使用 `INSTALL_METHOD=source` 构建指定仓库和分支；本 fork 尚未为这些改动发布 release 二进制。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | \
   sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+    BRANCH="main" INSTALL_METHOD="source" \
     ACTIVE_RESPONSE_ENABLED="no" \
     ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
@@ -54,9 +55,9 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security
 从同一个 fork、同一个分支升级：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.sh | \
   sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
+    BRANCH="main" INSTALL_METHOD="source" sh
 ```
 
 通知渠道、可选面板上报、服务操作及完整参数见 [agent 部署教程](docs/deployment.zh-CN.md)，面板见 [面板部署教程](docs/panel-deployment.zh-CN.md)。
@@ -77,18 +78,19 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security
 
 ## 已验证的结果
 
-**2026-10-01** 在 hyvps（Debian 13 x86_64）验证安全分支提交 `0d9e53f`：
+**2026-10-02** 在 hyvps（Debian 13 x86_64）验证合并候选版本，并核对已合并 `main` 的文件树完全一致：
 
 | 检查 | 结果 |
 | --- | --- |
-| Debian/bookworm workspace | 546 项通过、0 失败；需要 Docker socket 的 1 项在宿主单独执行。 |
-| Alpine/musl workspace | 546 项通过、0 失败；同一项宿主专用测试跳过。 |
+| Debian/bookworm workspace | 548 项通过、0 失败；需要 Docker socket 的 1 项在宿主单独执行。 |
+| Alpine/musl workspace | 548 项通过、0 失败；同一项宿主专用测试跳过。 |
 | 宿主专项 | 13 项全部通过，包含 Docker socket 测试。 |
 | 构建与代码检查 | locked release、格式检查、严格 Clippy 通过。 |
 | 隔离运行 | 真实 SSH 失败和 HTTP 探测被识别、封禁；七类惰性入侵后样本被识别。 |
-| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.4 MiB，进程 CPU 约占单核 0.7%。 |
+| 安装与面板 | 安装包与源码仓库切换、共享契约、UI 类型检查/构建、14 项 Worker/SQLite 校验及 9 项 Rust 面板无头浏览器检查通过。 |
+| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.63%。 |
 
-这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-01.md)。
+这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-02.md)。
 
 ## 检测与处置边界
 

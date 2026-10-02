@@ -2,7 +2,7 @@
 
 Lightweight Rust intrusion-signal monitoring for Linux VPS hosts, with evidence-backed alerts, optional source-IP blocking, and a fleet dashboard.
 
-[中文说明](README.zh-CN.md) · [Deployment](docs/deployment.md) · [Validation report](docs/validation-2026-10-01.md) · [Security work / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [Upstream](https://github.com/cryptoli/vps-sentinel)
+[中文说明](README.zh-CN.md) · [Deployment](docs/deployment.md) · [Validation report](docs/validation-2026-10-02.md) · [Security work / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [Upstream](https://github.com/cryptoli/vps-sentinel)
 
 [![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -13,10 +13,10 @@ This is a fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentin
 
 | Branch | Contents |
 | --- | --- |
-| `main` | Upstream v0.3.1 baseline and this fork's documentation. |
-| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | Security coverage and reliability improvements, tested at [`0d9e53f`](https://github.com/ChiphaLo/vps-sentinel/commit/0d9e53ff51de34932fab814fa878d69b7774a5d3). |
+| `main` | Upstream v0.3.1 plus this fork's tested security and reliability improvements. Recommended for installation. |
+| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | Development history, merged through [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1). |
 
-The security changes are proposed in [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) and are not yet merged into `main`. Install the feature branch explicitly to use the tested improvements. The instructions below set both the fork repository and branch; downloading a fork's installer alone does not override its upstream defaults.
+[PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) was merged on 2026-10-02 at [`b43a700`](https://github.com/ChiphaLo/vps-sentinel/commit/b43a7006b2eef9e458822d1825fed420b987e034). The merged tree matches the candidate tested on hyvps. Install and update scripts now default to this fork and `main`; an explicit `REPO_URL` also updates the origin in a reused source directory.
 
 ## What it monitors
 
@@ -25,26 +25,27 @@ The security changes are proposed in [PR #1](https://github.com/ChiphaLo/vps-sen
 | SSH and accounts | Logins, repeated failures, success after brute force, SSH key changes, new users and UID 0 account drift. |
 | Files and persistence | Critical files, web content, cron, systemd and startup entries, plus baseline review and allowlists. |
 | Processes and network | Process ancestry, executable identity, known miner/scanner identities, listeners, outbound snapshots and Web probe logs. |
-| Docker and audit | Container configuration and audit log facts; expanded rules are available on the security branch. |
+| Docker and audit | Container configuration and audit log facts; expanded rules are included in `main`. |
 | Response and reporting | Optional nftables/iptables source-IP blocks, unblock/expiry maintenance, fingerprints and notification channels. |
 | Fleet dashboard | Optional self-hosted Rust or Cloudflare Worker/D1 panel, signed telemetry and privacy redaction. |
 
-### Security branch additions
+### Fork improvements
 
 - Inspect container risks: privileged mode, host namespaces, Docker socket and writable host-root mounts, dangerous capabilities including `ALL`.
 - Parse quoted and hex-encoded audit arguments; recognize credential-access, privilege-persistence, module-manipulation and logging-disable commands when audit execution telemetry exists.
 - Detect monitored-file SUID/SGID, ownership and Linux capability drift without requiring content changes (`FILE-005`, `FILE-006`). Read one bounded xattr on existing FIM paths; add no Rust dependencies or full-disk scan.
 - Expand FIM and persistence paths, retain SIGINT during collection, and exclude zombie/dead process snapshots from active process alerts.
+- Keep command collection bounded even when descendant processes retain stdout; honor repository overrides when reusing installer/update source caches.
 - Provide a small runtime Dockerfile and a reproducible isolated attack-response lab.
 
 ## Install this fork
 
-The security branch is validated from source. These commands deliberately use `INSTALL_METHOD=source` so an upstream or unrelated release artifact cannot silently replace the selected branch.
+The merged code is validated from source. Use `INSTALL_METHOD=source` to build the selected repository and branch; this fork has not published a release artifact for these changes.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | \
   sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+    BRANCH="main" INSTALL_METHOD="source" \
     ACTIVE_RESPONSE_ENABLED="no" \
     ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
@@ -54,9 +55,9 @@ New installations in this example start with automatic IP blocking disabled. Run
 Update from the same fork and branch:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.sh | \
   sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
-    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
+    BRANCH="main" INSTALL_METHOD="source" sh
 ```
 
 For notifications, optional panel upload, service operations and all install options, see [agent deployment](docs/deployment.md). For the optional dashboard, see [panel deployment](docs/panel-deployment.md).
@@ -77,18 +78,19 @@ For notifications, optional panel upload, service operations and all install opt
 
 ## Verified results
 
-On **2026-10-01**, the security branch at `0d9e53f` was tested on hyvps (Debian 13 x86_64):
+On **2026-10-02**, the merge candidate was tested on hyvps (Debian 13 x86_64), then its exact tree was verified against merged `main`:
 
 | Check | Result |
 | --- | --- |
-| Debian/bookworm workspace | 546 passed, 0 failed; one Docker-socket test handled separately on the host. |
-| Alpine/musl workspace | 546 passed, 0 failed; the same host-only test skipped. |
+| Debian/bookworm workspace | 548 passed, 0 failed; one Docker-socket test handled separately on the host. |
+| Alpine/musl workspace | 548 passed, 0 failed; the same host-only test skipped. |
 | Explicit host suite | 13 passed, including the Docker-socket test. |
 | Build and code checks | Locked release build, formatting and strict Clippy passed. |
 | Isolated runtime | Real SSH failures and HTTP probes detected and blocked; seven inert post-compromise fixture types detected. |
-| Resource sample | Daemon RSS about 12.4 MiB and agent CPU about 0.7% of one core in a 15-second sample at a 5-second scan interval. |
+| Installer and panel | Package install and source switching, contract generation, UI typecheck/build, 14 Worker/SQLite cases and 9 headless Rust-panel browser checks passed. |
+| Resource sample | Daemon RSS about 12.3 MiB and agent CPU about 0.63% of one core in a 15-second sample at a 5-second scan interval. |
 
-These are dated on-host results, not a claim that current GitHub Actions is green. Resource usage depends on monitored scope and load; CPU excludes child processes. See the [validation report](docs/validation-2026-10-01.md) for methods, limits and reproduction.
+These are dated on-host results, not a claim that current GitHub Actions is green. Resource usage depends on monitored scope and load; CPU excludes child processes. See the [validation report](docs/validation-2026-10-02.md) for methods, limits and reproduction.
 
 ## Detection and response limits
 

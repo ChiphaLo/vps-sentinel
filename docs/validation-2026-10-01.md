@@ -1,5 +1,6 @@
 # Security branch validation · 2026-10-01
 
+> Historical report for the then-unmerged feature branch. PR #1 is now merged into `main`; see the [2026-10-02 validation](validation-2026-10-02.md) for the current tested merge and installation guidance.
 This report records the hyvps run on **2026-10-01**, not a new run triggered by the documentation update. The tested source is [`0d9e53ff51de34932fab814fa878d69b7774a5d3`](https://github.com/ChiphaLo/vps-sentinel/commit/0d9e53ff51de34932fab814fa878d69b7774a5d3) on `feat/security-coverage-phase1`. These changes are proposed in [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1), not yet merged into `main`.
 
 本报告记录 2026-10-01 的 hyvps 实测，不是本次文档更新后重新运行的结果。安全代码仍在功能分支；不能将下面的结果归属于 `main` 基础代码。机器可读记录见 [JSON evidence](validation-2026-10-01.json)。

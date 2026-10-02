@@ -1,6 +1,6 @@
 # Contributing
 
-This repository is the ChiphaLo fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). See the [README](README.md#fork-and-branch-status) before choosing a target branch. Security-feature changes currently target `feat/security-coverage-phase1`; documentation for the default repository homepage targets `main`.
+This repository is the ChiphaLo fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). See the [README](README.md#fork-and-branch-status) before choosing a target branch. Changes target `main`; security improvements from PR #1 are merged.
 
 ## Development
 
@@ -35,7 +35,7 @@ Notifier implementations must:
 
 ## Isolated validation
 
-Use the [container lab on the security branch](https://github.com/ChiphaLo/vps-sentinel/blob/feat/security-coverage-phase1/docs/container-lab.zh-CN.md) only against disposable fixtures you own. Keep network, PID and firewall effects inside the lab; do not target third-party systems. Separate actual detection and IP blocking from harness cleanup. The [2026-10-01 report](docs/validation-2026-10-01.md) records the tested scope and telemetry gaps.
+Use the [container lab](docs/container-lab.zh-CN.md) only against disposable fixtures you own. Keep network, PID and firewall effects inside the lab; do not target third-party systems. Separate actual detection and IP blocking from harness cleanup. The [2026-10-02 report](docs/validation-2026-10-02.md) records the tested scope and telemetry gaps.
 
 ## Code Style
 
@@ -43,3 +43,5 @@ Use the [container lab on the security branch](https://github.com/ChiphaLo/vps-s
 - Prefer existing project patterns.
 - Avoid hardcoded machine-specific paths.
 - Do not add attack, brute-force, stealth, or third-party scanning capabilities.
+
+Panel and installer regressions can also be checked with `node tests/panel_worker_smoke.mjs` (Node 24+) and `bash tests/source_checkout_smoke.sh`. The Worker test uses local SQLite and does not replace a live Cloudflare deployment test. Contract generation requires `rustfmt`; install it before `node scripts/generate-panel-contract.mjs --check`.

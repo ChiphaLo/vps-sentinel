@@ -1,6 +1,6 @@
 # 面板部署教程
 
-本文的命令在本 fork 的源码检出目录运行；先按 [README](../README.zh-CN.md#fork-与分支状态) 选择分支。安全增强实验验证的是 agent，不包含 Cloudflare 面板的重新部署验证。
+请从本 fork 的 `main` 检出目录执行。最新 [实测报告](validation-2026-10-02.md) 包含 Rust 面板无头浏览器验证及本地 Worker/SQLite 协议测试；尚未验证真实 Cloudflare/D1 部署。
 
 多服务器面板是可选组件。Agent 默认继续本地监控，只有 `[panel].enabled = true` 时才会推送带签名、有大小限制的遥测数据。
 

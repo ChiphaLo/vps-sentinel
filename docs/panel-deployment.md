@@ -1,6 +1,6 @@
 # Panel Deployment
 
-Run these commands from a checkout of this fork, selecting a branch as described in the [README](../README.md#fork-and-branch-status). The security experiment validates the agent; it is not evidence of a fresh Cloudflare panel deployment.
+Run these commands from this fork’s `main` checkout. The [dated validation](validation-2026-10-02.md) includes Rust-panel headless browser checks and local Worker/SQLite protocol tests; a live Cloudflare/D1 deployment remains unverified.
 
 The fleet panel is optional. Agents continue to monitor locally and push signed, bounded telemetry only when `[panel].enabled = true`.
 

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### ChiphaLo fork — merged 2026-10-02
+
+- Extend audit/Docker facts and bounded file permission/capability drift detection, persistence coverage and isolated attack-response validation.
+- Fix command deadlines when descendant processes retain stdout; terminate the command process group on timeout.
+- Make cached source install/update honor `REPO_URL`; default repository and package metadata to this fork, retaining explicit overrides.
+- Add meaningful command-timeout, source-checkout and Worker/SQLite regressions; ensure CI installs `rustfmt` for generated panel contracts.
+- [Dated validation](docs/validation-2026-10-02.md): Debian/Alpine 548 passed each, host 13, isolated lab 19, Worker 14 and headless Rust-panel browser 9; update installation instructions to `main`.
+
 ## 0.3.1
 
 - Panel UX and data quality: unified desktop/mobile layouts, split panel CSS into scoped style modules, restored dashboard data surfaces, improved review feedback/data health views, and removed redundant right-side duplication on event-oriented pages.
