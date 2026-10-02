@@ -1,5 +1,7 @@
 # Agent Deployment
 
+> **Fork deployment:** These examples install `ChiphaLo/vps-sentinel:feat/security-coverage-phase1` from source. The security changes are not yet in `main`. `REPO_URL`, `BRANCH` and `INSTALL_METHOD` must be passed together; script defaults still refer to upstream. See [fork status](../README.md#fork-and-branch-status) and the [dated validation report](validation-2026-10-01.md).
+
 This guide covers installing and operating the `vps-sentinel` agent on Linux VPS hosts. For fleet panel deployment, see [panel-deployment.md](panel-deployment.md).
 
 ## Requirements
@@ -7,7 +9,7 @@ This guide covers installing and operating the `vps-sentinel` agent on Linux VPS
 - Linux VPS with root or sudo access.
 - systemd is recommended. Non-systemd hosts can still run `vps-sentinel scan` manually.
 - `curl` and CA certificates are required for one-command installs.
-- Rust is only required when the installer cannot use a compatible release binary and falls back to source builds.
+- Rust and temporary build space are required for the source builds selected by this guide. The installer can install the toolchain when dependency installation is enabled.
 - Optional tools improve visibility: `journalctl`, `ss`, `nft`, `iptables`, `dpkg`/`rpm`/`apk`/`pacman`, `nvidia-smi`, `rocm-smi`, `auditd`, and `bpftrace`.
 
 ## Recommended One-Command Install
@@ -15,7 +17,9 @@ This guide covers installing and operating the `vps-sentinel` agent on Linux VPS
 For a real node, install with the notification channel, panel upload, active response, storage limit, and node-location detection configured in the first command:
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
@@ -26,27 +30,27 @@ sudo VPS_NAME="prod-web-1" \
   PANEL_PRIVACY_MODE="strict" \
   PANEL_UPLOAD_HOSTNAME="yes" \
   PANEL_NODE_LOCATION_ENABLED="yes" \
-  ACTIVE_RESPONSE_ENABLED="yes" \
-  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
+  ACTIVE_RESPONSE_ENABLED="no" \
+  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
-This command keeps all advanced local protections enabled, sends Telegram alerts, and pushes privacy-redacted telemetry to the panel. If you omit `TELEGRAM_*`, no Telegram messages are sent. If you omit both `PANEL_URL` and `PANEL_SHARED_SECRET`, no panel upload is configured.
+This command enables local detection, Telegram alerts and privacy-redacted panel telemetry. New installations initially leave automatic IP blocking disabled; review findings and trusted-admin allowlists before enabling it. Existing configuration is preserved. If you omit `TELEGRAM_*`, no Telegram messages are sent. If you omit both `PANEL_URL` and `PANEL_SHARED_SECRET`, no panel upload is configured.
 
 ## Local-Only Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" ACTIVE_RESPONSE_ENABLED="no" ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
-This shorter command is useful for quick local testing only. It installs the daemon and local detection, but it does not configure Telegram, email/webhook notifications, or panel upload.
+This command installs the daemon and local detection. New installations start without automatic IP blocking. Telegram, email/webhook notifications and panel upload are not configured; existing configuration is preserved.
 
 The installer will:
 
 - install `vps-sentinel` and the shorter `vs` command;
 - install compatible dependencies for Debian/Ubuntu, RHEL-family, Fedora, Alpine, and Arch-family hosts;
-- use a release artifact when it can run on the current host, otherwise build from source;
+- build the explicitly selected fork branch from source in these examples;
 - create `/etc/vps-sentinel/config.toml` only if it does not already exist;
 - validate config, migrate compatible old config keys, sync new default keys, bootstrap the first baseline, and run a no-notification warm-up scan;
 - install and start the systemd service when systemd is available;
@@ -57,8 +61,10 @@ The installer will:
 Use this form when you want Telegram ready immediately:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh -o /tmp/vps-sentinel-install.sh
-sudo VPS_NAME="prod-web-1" \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh -o /tmp/vps-sentinel-install.sh
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
@@ -68,11 +74,13 @@ sudo VPS_NAME="prod-web-1" \
 Equivalent one-liner:
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
 Variable meanings:
@@ -102,15 +110,16 @@ Panel-related variables:
 ## Useful Install Options
 
 ```bash
-sudo BRANCH="main" \
-  INSTALL_METHOD="auto" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" \
+  INSTALL_METHOD="source" \
   INSTALL_DEPS="yes" \
   ACTIVE_RESPONSE_ENABLED="yes" \
   ACTIVE_RESPONSE_SSH_FAILED_LOGIN_BLOCK_THRESHOLD="4" \
   ACTIVE_RESPONSE_WEB_PROBE_BLOCK_THRESHOLD="25" \
   ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
 Common variables:
@@ -118,7 +127,7 @@ Common variables:
 | Variable | Meaning |
 | --- | --- |
 | `BRANCH` | Git branch used when source checkout is needed. Default: `main`. |
-| `REPO_URL` | Git repository URL. Default: official GitHub repository. |
+| `REPO_URL` | Git repository URL. Script default: upstream repository; this guide explicitly selects the fork. |
 | `INSTALL_METHOD` | `auto`, `release`, or `source`. `auto` validates release binaries first and falls back to source. |
 | `INSTALL_DEPS` | `yes` or `no`. Installs dependencies through the host package manager when enabled. |
 | `INSTALL_SYSTEMD` | `auto`, `yes`, or `no`. Controls systemd service installation. |
@@ -138,21 +147,22 @@ Active response variables map to `[active_response]` in `/etc/vps-sentinel/confi
 ## Update
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
 ```
 
-The updater preserves existing config and state. It validates the target binary before replacing the current one. If the binary is not compatible with the host, it builds from source and ensures Rust has a default stable toolchain.
+The updater preserves existing config and state. It validates the target binary before replacing the current one. With the explicit `INSTALL_METHOD=source` above, it builds the selected branch and ensures Rust has a default stable toolchain.
 Successful source updates remove `$WORK_DIR/target` by default. Set `CLEAN_SOURCE_TARGET=no` only when you intentionally want to keep Rust build artifacts for faster repeated local builds.
 
 Useful update variables:
 
 ```bash
-sudo BRANCH="main" \
-  INSTALL_METHOD="auto" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" \
+  INSTALL_METHOD="source" \
   VALIDATE_CONFIG="yes" \
   MIGRATE_CONFIG="yes" \
   SYNC_CONFIG_DEFAULTS="yes" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sh'
 ```
 
 ## Service Operations
@@ -230,7 +240,7 @@ Commands:
 
 ```bash
 sudo vs blocks list
-sudo vs blocks unblock <ip>
+sudo vs blocks unblock '<ip>'
 sudo vs blocks unblock-all --yes
 sudo vs blocks cleanup
 ```
@@ -240,7 +250,7 @@ sudo vs blocks cleanup
 ```bash
 sudo vs baseline create
 sudo vs baseline diff
-sudo vs baseline approve <approval-key>
+sudo vs baseline approve '<approval-key>'
 ```
 
 Package upgrades and planned maintenance can create legitimate drift. Review evidence before refreshing a baseline.

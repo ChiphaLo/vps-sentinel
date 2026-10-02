@@ -6,6 +6,10 @@ vps-sentinel is a defensive security project. Please do not publish exploitable 
 
 Open a private GitHub security advisory if available. If that is not possible, open an issue with minimal sensitive detail and ask for a private contact path.
 
+For this fork, identify the branch and commit from [ChiphaLo/vps-sentinel](https://github.com/ChiphaLo/vps-sentinel). Do not include SSH credentials, notification tokens, panel secrets or unredacted host evidence in a public issue. Do not assume private advisory reporting is enabled on a fork. Coordinate upstream issues with the original project through its own reporting policy.
+
+The [dated validation report](docs/validation-2026-10-01.md) states what was tested. Detection depends on collection visibility and trusted baselines; active response blocks source IPs and does not remove payloads or restore a compromised host.
+
 ## Scope
 
 In scope:

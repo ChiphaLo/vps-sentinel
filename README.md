@@ -1,125 +1,105 @@
-# vps-sentinel
+# vps-sentinel · ChiphaLo fork
 
-Lightweight Rust intrusion-signal monitoring and fleet security dashboard for Linux VPS hosts.
+Lightweight Rust intrusion-signal monitoring for Linux VPS hosts, with evidence-backed alerts, optional source-IP blocking, and a fleet dashboard.
 
-[中文说明](README.zh-CN.md)
+[中文说明](README.zh-CN.md) · [Deployment](docs/deployment.md) · [Validation report](docs/validation-2026-10-01.md) · [Security work / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [Upstream](https://github.com/cryptoli/vps-sentinel)
 
-![CI](https://github.com/cryptoli/vps-sentinel/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Positioning
+## Fork and branch status
 
-`vps-sentinel` is a defensive monitoring tool. It aims to detect suspicious host activity early, show evidence, and suggest operator actions.
+This is a fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). Upstream provides the original agent and dashboard; this fork extends Linux security collection, state comparison, and isolated validation.
 
-It is not antivirus software, an exploit framework, a brute-force tool, a third-party scanner, a C2/backdoor, or a guarantee that a server is clean.
-
-## Highlights
-
-| Area | Capabilities |
+| Branch | Contents |
 | --- | --- |
-| SSH and accounts | Successful SSH logins, password logins, brute force, brute force followed by success, `authorized_keys` drift, unsafe key-file state, new users, UID 0 users, and privilege-relevant changes. |
-| Baseline drift | Stateful baselines for users, SSH keys, critical files, persistence entries, listeners, and service identities; semantic drift scoring reduces package-upgrade and dynamic-port noise. |
-| Process and GPU behavior | Procfs process context, parent chain, systemd identity, package ownership, executable hash/owner, outbound profile, behavior-profile drift, known miner/scanner identity, and NVIDIA/ROCm GPU compute signals. |
-| Network and web probes | Public listener ownership, firewall context, trusted-proxy client-IP recovery, Web probe family classification, exploit-path aggregation, error bursts, and source-IP response candidates. |
-| Active response | Optional nftables/iptables source-IP blocking for high-confidence SSH and Web attack sources, temporary/permanent escalation, allowlists, trusted-proxy safety, and CLI unblock commands. |
-| Attack fingerprints | Method-based fingerprints using exact hashes plus SimHash-style similarity, so repeated attack methods can be grouped even when source IPs rotate. |
-| Suppression and local ops | Structured config migration, canonical allowlist and suppress-rule rendering, rule-level accepted-risk suppression, and a local `vs menu` for routine node operations without turning the panel into an SSH control plane. |
-| Reports and notifications | Daily reports and alert messages through Telegram, Email SMTP, webhook, ntfy, Gotify, Bark, ServerChan, DingTalk, and Feishu; Chinese is the default notification language. |
-| Fleet panel | Push-mode Rust or Cloudflare Worker/D1 panel with public/private access, privacy redaction, node metrics, blocklist attribution, review flows, WebSocket refresh on self-hosted panel, and theme extension hooks. |
-| Resource control | Bounded log parsing, event budgets, SQLite retention, database size limits, raw-evidence reduction, and small daemon RSS on VPS-class hosts. |
+| `main` | Upstream v0.3.1 baseline and this fork's documentation. |
+| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | Security coverage and reliability improvements, tested at [`0d9e53f`](https://github.com/ChiphaLo/vps-sentinel/commit/0d9e53ff51de34932fab814fa878d69b7774a5d3). |
 
-## Deployment
+The security changes are proposed in [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) and are not yet merged into `main`. Install the feature branch explicitly to use the tested improvements. The instructions below set both the fork repository and branch; downloading a fork's installer alone does not override its upstream defaults.
 
-Detailed agent and panel deployment guides:
+## What it monitors
 
-- Agent deployment: [docs/deployment.md](docs/deployment.md) / [docs/deployment.zh-CN.md](docs/deployment.zh-CN.md)
-- Panel deployment: [docs/panel-deployment.md](docs/panel-deployment.md) / [docs/panel-deployment.zh-CN.md](docs/panel-deployment.zh-CN.md)
-- Panel architecture: [docs/panel-architecture.md](docs/panel-architecture.md)
-- Panel theme extensions: [docs/panel-themes.md](docs/panel-themes.md)
+| Area | Coverage |
+| --- | --- |
+| SSH and accounts | Logins, repeated failures, success after brute force, SSH key changes, new users and UID 0 account drift. |
+| Files and persistence | Critical files, web content, cron, systemd and startup entries, plus baseline review and allowlists. |
+| Processes and network | Process ancestry, executable identity, known miner/scanner identities, listeners, outbound snapshots and Web probe logs. |
+| Docker and audit | Container configuration and audit log facts; expanded rules are available on the security branch. |
+| Response and reporting | Optional nftables/iptables source-IP blocks, unblock/expiry maintenance, fingerprints and notification channels. |
+| Fleet dashboard | Optional self-hosted Rust or Cloudflare Worker/D1 panel, signed telemetry and privacy redaction. |
 
-Recommended full agent install:
+### Security branch additions
+
+- Inspect container risks: privileged mode, host namespaces, Docker socket and writable host-root mounts, dangerous capabilities including `ALL`.
+- Parse quoted and hex-encoded audit arguments; recognize credential-access, privilege-persistence, module-manipulation and logging-disable commands when audit execution telemetry exists.
+- Detect monitored-file SUID/SGID, ownership and Linux capability drift without requiring content changes (`FILE-005`, `FILE-006`). Read one bounded xattr on existing FIM paths; add no Rust dependencies or full-disk scan.
+- Expand FIM and persistence paths, retain SIGINT during collection, and exclude zombie/dead process snapshots from active process alerts.
+- Provide a small runtime Dockerfile and a reproducible isolated attack-response lab.
+
+## Install this fork
+
+The security branch is validated from source. These commands deliberately use `INSTALL_METHOD=source` so an upstream or unrelated release artifact cannot silently replace the selected branch.
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
-  TELEGRAM_BOT_TOKEN="<telegram-bot-token>" \
-  TELEGRAM_CHAT_ID="<telegram-chat-id>" \
-  PANEL_URL="https://your-panel.example.com/api/v1/ingest" \
-  PANEL_SHARED_SECRET="<panel-shared-secret>" \
-  ACTIVE_RESPONSE_ENABLED="yes" \
-  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
-  STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | \
+  sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+    ACTIVE_RESPONSE_ENABLED="no" \
+    ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
-The shorter `curl ... | sudo sh` form is still supported, but it installs a local-only daemon without Telegram or panel upload. Use the deployment guide when installing a real node.
+New installations in this example start with automatic IP blocking disabled. Run `sudo vs doctor`, inspect findings and trusted-admin allowlists, then enable response if appropriate. Existing configuration and local state are preserved; review them when reinstalling or switching repositories. Source builds need Rust and temporary build space; successful installs remove the build target directory by default.
 
-Quick update:
+Update from the same fork and branch:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | \
+  sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
 ```
 
-The installer and updater preserve existing `/etc/vps-sentinel/config.toml` unless you explicitly edit it.
+For notifications, optional panel upload, service operations and all install options, see [agent deployment](docs/deployment.md). For the optional dashboard, see [panel deployment](docs/panel-deployment.md).
 
-## Common Commands
+## Local workflow
 
-| Command | Meaning |
+| Command | Purpose |
 | --- | --- |
-| `vs doctor` | Check runtime visibility, config validity, dependencies, and service context. |
-| `vs scan` | Run one local scan and print findings without waiting for the daemon loop. |
-| `vs reload` | Validate config and reload the daemon. |
-| `vs baseline create` | Create the first local baseline. |
-| `vs baseline diff` | Compare current host state with the baseline. |
-| `vs blocks list` | Show active response blocks. |
-| `vs blocks unblock <ip>` | Remove one temporary or permanent source-IP block. |
-| `vs fingerprints explain <id>` | Explain an attack fingerprint cluster. |
-| `vs report send` | Send the default daily report through configured notification channels. |
-| `vs panel push` | Push one signed telemetry snapshot to the configured panel. |
-| `vs menu` | Guided local operations for trusted admin IPs, allowlist paths, baseline refresh, block review/unblock, config validation, and service reload. |
-| `vs config validate` | Validate the config file. |
-| `vs config migrate` | Apply compatible config migrations. |
-| `vs config normalize` | Rewrite supported config sections such as `[allowlist]` and `[suppress_rules]` into canonical array format. |
-| `vs config suppress-rule add CONFIG-004 --global` | Suppress a reviewed accepted-risk rule without excluding the monitored file from integrity checks. |
+| `sudo vs doctor` | Check config, tools and collection visibility. |
+| `sudo vs check --json` | Inspect current facts without persistence, notifications or firewall response; it does not compare a stored baseline. |
+| `sudo vs scan --no-notify --json` | Persist a scan and compare the baseline, without notification or active response. |
+| `sudo vs baseline create` | Establish a baseline after reviewing and trusting the current state. |
+| `sudo vs baseline diff` | Review host changes against the stored baseline. |
+| `sudo vs blocks list` / `sudo vs blocks why <ip> --json` | Inspect recorded blocks and their actual expiry. |
+| `sudo vs blocks unblock <ip>` / `sudo vs blocks cleanup` | Remove a block or maintain expired/stale block state. |
+| `sudo vs config validate` / `sudo vs reload` | Validate configuration and reload the service. |
+| `sudo vs menu` | Guided local configuration and review. |
 
-## Token Types
+## Verified results
 
-`vps-sentinel` keeps the panel token model small:
+On **2026-10-01**, the security branch at `0d9e53f` was tested on hyvps (Debian 13 x86_64):
 
-| Token or secret | Used by | Purpose | Required? |
-| --- | --- | --- | --- |
-| `panel.secret` / `PANEL_SHARED_SECRET` | Agent and panel | HMAC signing for `POST /api/v1/ingest`. | Required when panel upload is enabled. |
-| `PANEL_NODE_SECRETS` | Panel | Optional per-node ingest secrets keyed by non-sensitive node name. | Optional. |
-| `PANEL_TOKEN` | Browser and panel | Single private access token for details, reviews, audit logs, and management pages. | Required for private panel workflows. |
-| Notification tokens | Agent and notification provider | Telegram/Gotify/ntfy/Bark/ServerChan/DingTalk/Feishu/webhook/email credentials. | Only required for enabled channels. |
+| Check | Result |
+| --- | --- |
+| Debian/bookworm workspace | 546 passed, 0 failed; one Docker-socket test handled separately on the host. |
+| Alpine/musl workspace | 546 passed, 0 failed; the same host-only test skipped. |
+| Explicit host suite | 13 passed, including the Docker-socket test. |
+| Build and code checks | Locked release build, formatting and strict Clippy passed. |
+| Isolated runtime | Real SSH failures and HTTP probes detected and blocked; seven inert post-compromise fixture types detected. |
+| Resource sample | Daemon RSS about 12.4 MiB and agent CPU about 0.7% of one core in a 15-second sample at a 5-second scan interval. |
 
-Deployment scripts migrate old `PANEL_ADMIN_TOKEN`, `PANEL_OPERATOR_TOKEN`, or `PANEL_VIEW_TOKEN` values into `PANEL_TOKEN` when an existing credential file is reused.
+These are dated on-host results, not a claim that current GitHub Actions is green. Resource usage depends on monitored scope and load; CPU excludes child processes. See the [validation report](docs/validation-2026-10-01.md) for methods, limits and reproduction.
 
-## Compatibility
+## Detection and response limits
 
-The agent targets common systemd Linux VPS distributions including Debian, Ubuntu, Alma/Rocky/RHEL-family, Fedora, Alpine, Arch, and similar hosts. It degrades when platform tools are missing instead of crashing. Some collectors need root-level visibility; `vs doctor` reports reduced visibility when the daemon lacks permissions.
+Active response blocks source IPs. It does not kill processes, delete backdoors or restore accounts. The lab harness cleans its own inert fixtures and then runs an independent rescan; that is not automatic payload removal by the product.
 
-Runtime footprint depends on enabled collectors, log volume, and file-integrity scope. On the current validation VPS set, the daemon process normally stays in the single-digit to low-tens MiB RSS range; systemd cgroup memory can be higher because Linux may charge recently touched file cache to the service.
+Audit rules need configured audit telemetry. The built-in runtime probe is optional, and completed short-lived activity can escape snapshots: brief credential reads and outbound connections were not captured in the lab without audit/eBPF data. This fork does not claim complete EDR coverage, package-content integrity verification or rootkit removal. Permission/capability comparison applies only to monitored files and requires a trusted baseline containing those fields.
 
-## Privacy
+A normally isolated container observes itself, not the host. The runtime image and lab do not imply host monitoring without an explicit visibility/deployment design.
 
-Defaults are local-first: no panel upload unless `[panel].enabled = true`, no notification channel unless configured, bounded file scanning, and local SQLite storage. Panel telemetry removes node IDs, host IDs, public server IPs, raw evidence, paths, command lines, and general internal network fields before remote storage. Safe display fields such as node name, sanitized hostname, country, region, and city may be uploaded for dashboard use. Confirmed external attacker IPs can be shown on the public blocklist when active-response evidence supports it, but public blocklist rows do not expose node names.
+## Privacy, contributing and upstream
 
-The panel is not a remote command or SSH management plane. Privileged operations such as baseline refreshes, allowlist changes, and unblock actions stay on each node through local `vs` commands, so a panel compromise does not directly become SSH control of the fleet.
+Local SQLite storage is the default; panel upload and notification channels require configuration. Signed panel telemetry redacts raw evidence, paths, commands and server identifiers. Confirmed attacker IPs may appear on the public blocklist. The panel is not a remote SSH/command plane; privileged operations remain local.
 
-Secrets belong in local config files, Worker secrets, or systemd environment files. Repository files only contain placeholder examples for tokens, passwords, webhook secrets, SMTP credentials, Cloudflare API tokens, and panel shared secrets.
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=cryptoli/vps-sentinel&type=Date)](https://www.star-history.com/#cryptoli/vps-sentinel&Date)
-
-## License
-
-MIT License. See [LICENSE](LICENSE) and [docs/open-source-license.md](docs/open-source-license.md).
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). New rules must be defensive, explainable, evidence-backed, and safe by default.
-
-## Security
-
-Please report vulnerabilities privately according to [SECURITY.md](SECURITY.md).
+Keep secrets in local config or deployment secret stores. [Contributing](CONTRIBUTING.md) covers development and rule expectations; [SECURITY.md](SECURITY.md) covers private reporting. Original attribution is preserved under the [MIT license](LICENSE); see [license notes](docs/open-source-license.md).

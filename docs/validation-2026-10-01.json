@@ -1,0 +1,198 @@
+{
+  "summary": {
+    "cases": {
+      "benign_http_has_no_attack_alert": true,
+      "real_ssh_failures_detected": true,
+      "ssh_firewall_block_applied": true,
+      "blocked_source_cannot_reach_http": true,
+      "unblock_restores_connectivity": true,
+      "real_http_probes_detected": true,
+      "web_firewall_block_applied": true,
+      "web_block_stops_new_connections": true,
+      "suid_sgid_without_content_change": true,
+      "capability_without_content_change": true,
+      "cron_persistence": true,
+      "unauthorized_ssh_key_change": true,
+      "webshell_content": true,
+      "miner_identity_process": true,
+      "additional_uid_zero_account": true,
+      "no_unadvertised_destructive_remediation": true,
+      "rescan_confirms_fixture_cleanup": true,
+      "expired_block_cleanup_restores_connectivity": true,
+      "daemon_sigint_exits_successfully": true
+    },
+    "limitations": [
+      "The product blocks public-source IPs; it does not kill processes, remove payloads, or restore accounts.",
+      "Cleanup is performed by the lab harness against its own fixtures, then independently rescanned.",
+      "Container-only visibility: no host PID/network, Docker socket, host root mounts, auditd, or eBPF.",
+      "Brief credential reads and short-lived outbound connections are negative coverage probes, not guaranteed detections."
+    ],
+    "images_bytes": {
+      "runtime": 104298834,
+      "fixture": 161703296
+    },
+    "isolation": {
+      "internal_network": true,
+      "target": {
+        "Privileged": false,
+        "PidMode": "",
+        "NetworkMode": "internal lab network",
+        "Binds": null,
+        "PortBindings": {},
+        "CapAdd": [
+          "NET_ADMIN"
+        ]
+      }
+    },
+    "scans": {
+      "clean": {
+        "seconds": 0.233,
+        "rss_kb": 12344,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "external-ssh": {
+        "seconds": 0.266,
+        "rss_kb": 12484,
+        "collector_errors": [],
+        "rules": [
+          "SSH-003"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "external-web": {
+        "seconds": 0.267,
+        "rss_kb": 12788,
+        "collector_errors": [],
+        "rules": [
+          "WEB-001"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "internal-compromise": {
+        "seconds": 0.363,
+        "rss_kb": 12896,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "telemetry-coverage-probes": {
+        "seconds": 0.302,
+        "rss_kb": 12920,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "after-harness-cleanup": {
+        "seconds": 0.207,
+        "rss_kb": 12528,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      }
+    },
+    "web_block": {
+      "backend": "iptables",
+      "blocked_at": "2026-10-01T13:43:15.972750752Z",
+      "expired": false,
+      "expires_at": "2026-10-01T13:43:45.972750752Z",
+      "firewall_present": true,
+      "reason": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=6 layer=high_confidence_web_exploit",
+      "rule_id": "WEB-001"
+    },
+    "automatic_payload_cleanup_supported": false,
+    "negative_coverage_probes": {
+      "brief_shadow_read_detected": false,
+      "brief_connect_event_count": 0,
+      "note": "No audit/eBPF source enabled; snapshots cannot reliably capture already completed activity."
+    },
+    "daemon_rss_kb": {
+      "min": 12668,
+      "max": 12744,
+      "samples": 15
+    },
+    "daemon_cpu_percent_one_core": 0.684,
+    "result": "passed",
+    "host_firewall_unchanged": true
+  },
+  "checks": {
+    "workspace": {
+      "passed": 546,
+      "failed": 0,
+      "ignored": 1
+    },
+    "musl": {
+      "passed": 546,
+      "failed": 0,
+      "ignored": 1
+    },
+    "host": {
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    },
+    "rust_status": "completed",
+    "musl_status": "passed"
+  },
+  "source_sha256": {
+    "crates/sentinel-agent/src/baseline/approval.rs": "7a50f5fd927ebd87400d419a3ec0ec9f59af9cab028a1e3af0161f55b3324990",
+    "crates/sentinel-agent/src/baseline/diff.rs": "d667cfe3266f49f8687da15e77eda42affb1dca38134fec4cf4a78f72fc08abf",
+    "crates/sentinel-agent/src/baseline/snapshot.rs": "baf3effb641949c4138d0834107170a5f40553765c7a85f588049bc4eca598df",
+    "crates/sentinel-agent/src/collectors/file_integrity.rs": "19b44f4acbe6ad6a57b36c5daa4557a89ef3adf446bff30ade6582c646b0cb71",
+    "crates/sentinel-agent/src/collectors/mod.rs": "a998c9a6d7af3fe535a01381c925f7614737402f95048342af2ca84048191757",
+    "crates/sentinel-agent/src/detectors/file_rules.rs": "93191b6857ddb2f4e8761e1dcf14e2d857853bd1931009de5111df46566cd6d2",
+    "crates/sentinel-agent/src/detectors/process_rules.rs": "968361608e72921daca050cc604abfcb505975ff621caa6639f655b279ba1a55",
+    "crates/sentinel-agent/src/detectors/rule_matrix_tests.rs": "fdc78b64b368f03b2fcc7d73e2cc49962262d90dab2499f5e181c1e49edd90e3",
+    "crates/sentinel-agent/src/notify/mod.rs": "891496569abfa9df7c604075f07997b54b30c225932bb989680e4adf84e6d429",
+    "crates/sentinel-agent/src/storage/sqlite.rs": "8669e19bb4cb8476663954f018c73aabeecb50cc096c14b61f4d9d48731ea99f",
+    "crates/sentinel-agent/src/utils/procfs.rs": "f8dbaef881f6e8c6d13f8cbf25fc46f97e7974168a6741dabe03715223a978f1",
+    "crates/sentinel-agent/tests/file_privilege_drift.rs": "d9d8a562e8094db0b16d040cb9d9f0eec06433e0002fd0b18bee594d6884b4b2",
+    "crates/sentinel-agent/tests/process_cleanup_state.rs": "447e6e2f7a2d9c029b26e2d33ed43226c7422da2ca1483304c7caeceeddb64d9",
+    "docs/container-lab.zh-CN.md": "11918d3464321fd30ce5c42d7b1be3e501c0b693c087fe040d9930db8675770d",
+    "packaging/Dockerfile": "e1f30ade1b9537130e531618b8224f2b11570bc3aa1729236be68cbc3ccdb53c",
+    "tests/container_lab/Dockerfile": "9338da7f3585feade550eef65b916dff1c68c014b8ebdb95d418febc4d18f458",
+    "tests/container_lab/run.py": "27dab3d8afbc0a950db0610d9e657c0f933d7d03f954232ab53cfe3b28910a65",
+    "tests/container_lab/server.py": "d5e117034db1aebfdc59df39f9482fdb27ca47c252c7926e3c34a981bc16fabc",
+    "tests/container_lab/start.sh": "bff059a14b449736583f18c5dbaf8238f4ceb8e31b5f1348186d8523353f0843"
+  },
+  "binary_sha256": "f6855881439f861a7fb6710273e38c76c1f02a00d40ea278e655bbfe188301bf",
+  "binary_bytes": 20218448,
+  "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "commit": "0d9e53ff51de34932fab814fa878d69b7774a5d3",
+  "git_tree": "27414902a58ae5c468cee8966d199c1363f31da9",
+  "pull_request": "https://github.com/ChiphaLo/vps-sentinel/pull/1",
+  "github_ci": {
+    "confirmed": false,
+    "pr_workflow_runs_returned": 0,
+    "commit_statuses_returned": 0
+  },
+  "validation_date": "2026-10-01",
+  "record_type": "Dated lab evidence, not a new run or complete raw event archive"
+}

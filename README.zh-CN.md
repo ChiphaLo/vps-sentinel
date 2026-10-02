@@ -1,125 +1,105 @@
-# vps-sentinel
+# vps-sentinel · ChiphaLo fork
 
-面向 Linux VPS 的轻量级 Rust 入侵信号监控与多服务器安全面板。
+面向 Linux VPS 的轻量 Rust 入侵信号监控：提供证据与告警、可选来源 IP 封禁，以及多服务器安全面板。
 
-[English README](README.md)
+[English](README.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-01.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
 
-![CI](https://github.com/cryptoli/vps-sentinel/actions/workflows/ci.yml/badge.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+[![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## 项目定位
+## Fork 与分支状态
 
-`vps-sentinel` 是防御型监控工具，目标是尽早发现异常、给出证据、给出处置建议。
+本仓库 fork 自 [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel)。原作者提供 agent 和面板，本 fork 着重补充 Linux 安全数据采集、状态漂移检测和隔离实测。
 
-它不是杀毒软件、漏洞利用框架、密码爆破工具、第三方主机扫描器、C2/后门/隐蔽工具，也不是“主机绝对安全”的保证。
-
-## 核心能力
-
-| 模块 | 能力 |
+| 分支 | 内容 |
 | --- | --- |
-| SSH 与账号 | 成功登录、密码登录、爆破、爆破后成功、`authorized_keys` 漂移、key 文件危险状态、新用户、UID 0 用户和权限相关变化。 |
-| 基线漂移 | 对用户、SSH key、关键文件、持久化项、监听端口和服务身份建立本地基线；通过语义漂移评分减少软件包升级、动态端口和正常运维噪声。 |
-| 进程与 GPU 行为 | procfs、父进程链、systemd 身份、包归属、可执行文件 hash/owner、出站画像、行为画像漂移、已知矿工/扫描器身份、NVIDIA/ROCm GPU 计算信号。 |
-| 网络与 Web 探查 | 公网监听 owner、防火墙上下文、可信代理真实客户端 IP 还原、Web 探查家族分类、攻击路径聚合、错误爆发和封禁候选。 |
-| 主动响应 | 对高置信 SSH/Web 攻击源执行可选 nftables/iptables 来源 IP 封禁，支持临时/永久升级、白名单、可信代理保护和 CLI 解封。 |
-| 攻击指纹 | 使用精确 hash 和 SimHash 风格近似匹配聚合同一攻击手法，即使来源 IP 变化也能归类。 |
-| 静默与本地运维 | 结构化配置迁移、allowlist 和 suppress_rules 规范化渲染、按规则 ID 的已接受风险静默，以及本地 `vs menu`，不把面板变成 SSH 控制面。 |
-| 报告与通知 | 支持每日安全报告，以及 Telegram、Email SMTP、Webhook、ntfy、Gotify、Bark、ServerChan、钉钉和飞书；通知默认中文。 |
-| 多 VPS 面板 | 推模式 Rust 自建面板或 Cloudflare Worker/D1 面板，支持公开/私有访问、隐私脱敏、节点指标、黑名单归属、复核流程、自建 WebSocket 刷新和主题扩展入口。 |
-| 资源控制 | 有界日志解析、事件预算、SQLite 保留策略、数据库大小限制、原始证据裁剪，对小内存 VPS 友好。 |
+| `main` | 上游 v0.3.1 基础代码和本 fork 的说明文档。 |
+| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | 安全覆盖与可靠性增强，已验证提交为 [`0d9e53f`](https://github.com/ChiphaLo/vps-sentinel/commit/0d9e53ff51de34932fab814fa878d69b7774a5d3)。 |
 
-## 部署
+安全增强仍在 [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 中，尚未合并到 `main`。要使用这些改动，请明确安装功能分支。下面的命令同时指定 fork 地址和分支；只下载 fork 的安装脚本，不会覆盖脚本内的上游默认地址。
 
-完整部署步骤请看文档：
+## 能监控什么
 
-- Agent 部署：[docs/deployment.zh-CN.md](docs/deployment.zh-CN.md) / [docs/deployment.md](docs/deployment.md)
-- 面板部署：[docs/panel-deployment.zh-CN.md](docs/panel-deployment.zh-CN.md) / [docs/panel-deployment.md](docs/panel-deployment.md)
-- 面板架构：[docs/panel-architecture.zh-CN.md](docs/panel-architecture.zh-CN.md) / [docs/panel-architecture.md](docs/panel-architecture.md)
-- 面板主题扩展：[docs/panel-themes.zh-CN.md](docs/panel-themes.zh-CN.md) / [docs/panel-themes.md](docs/panel-themes.md)
+| 模块 | 覆盖范围 |
+| --- | --- |
+| SSH 与账户 | 登录、连续失败、爆破后成功、SSH key 变化、新用户及 UID 0 账户漂移。 |
+| 文件与持久化 | 关键文件、Web 内容、cron、systemd、启动项，以及基线复核和白名单。 |
+| 进程与网络 | 父进程链、可执行文件身份、已知矿工/扫描器身份、监听端口、外连快照及 Web 探测日志。 |
+| Docker 与 audit | 容器配置和 audit 日志；扩展规则位于安全功能分支。 |
+| 响应与报告 | 可选 nftables/iptables 来源 IP 封禁、解封与到期维护、攻击指纹和通知渠道。 |
+| 多服务器面板 | 可选 Rust 自建或 Cloudflare Worker/D1 面板、签名上报和隐私脱敏。 |
 
-推荐完整安装 agent：
+### 安全功能分支新增内容
+
+- 检查 privileged、宿主命名空间、Docker socket、可写宿主根目录挂载，以及包含 `ALL` 的危险 capability。
+- 保留 audit 参数的引号与空格、解码十六进制 argv；有执行遥测时识别凭据读取、权限持久化、内核模块操作及禁用日志的命令。
+- 检测已监控文件的 SUID/SGID、所有者和 Linux capability 漂移，内容不变也能发现（`FILE-005`、`FILE-006`）。只在原 FIM 路径上读取一个有界 xattr，不增加 Rust 依赖，不做全盘扫描。
+- 扩展 FIM 和持久化路径，保留采集期间收到的 SIGINT，并避免把僵尸/已终止进程误报为活动进程。
+- 提供小型运行镜像和可复现的隔离攻击响应实验。
+
+## 安装这个 fork
+
+安全分支已经通过源码验证。命令明确使用 `INSTALL_METHOD=source`，避免下载上游或与指定分支无关的 release 二进制。
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
-  TELEGRAM_BOT_TOKEN="<telegram-bot-token>" \
-  TELEGRAM_CHAT_ID="<telegram-chat-id>" \
-  PANEL_URL="https://your-panel.example.com/api/v1/ingest" \
-  PANEL_SHARED_SECRET="<panel-shared-secret>" \
-  ACTIVE_RESPONSE_ENABLED="yes" \
-  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
-  STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | \
+  sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+    ACTIVE_RESPONSE_ENABLED="no" \
+    ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
-更短的 `curl ... | sudo sh` 仍然支持，但它只会安装本地守护进程，不会配置 Telegram 或面板上报。真实节点建议按部署教程使用完整命令。
+该示例让新安装的实例先关闭自动 IP 封禁。先运行 `sudo vs doctor`、查看告警及可信管理员白名单，再按实际需要启用响应。重装保留已有配置和本地状态，切换仓库或重装时应检查现有配置。源码构建需要 Rust 和临时构建空间；安装成功后默认删除 target 构建目录。
 
-快速升级：
+从同一个 fork、同一个分支升级：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | \
+  sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+    BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
 ```
 
-安装和升级默认保留已有 `/etc/vps-sentinel/config.toml`，不会覆盖用户配置。
+通知渠道、可选面板上报、服务操作及完整参数见 [agent 部署教程](docs/deployment.zh-CN.md)，面板见 [面板部署教程](docs/panel-deployment.zh-CN.md)。
 
-## 常用命令
+## 常用本地操作
 
-| 命令 | 含义 |
+| 命令 | 用途 |
 | --- | --- |
-| `vs doctor` | 检查运行可见性、配置、依赖和服务上下文。 |
-| `vs scan` | 立即执行一次本地扫描。 |
-| `vs reload` | 校验配置并重载 daemon。 |
-| `vs baseline create` | 创建初始本地基线。 |
-| `vs baseline diff` | 对比当前主机状态和基线。 |
-| `vs blocks list` | 查看当前主动封禁。 |
-| `vs blocks unblock <ip>` | 解除某个临时或永久封禁。 |
-| `vs fingerprints explain <id>` | 解释攻击指纹聚类。 |
-| `vs report send` | 通过已启用通知渠道发送默认日报。 |
-| `vs panel push` | 向面板推送一次签名遥测。 |
-| `vs menu` | 本地引导式运维：可信管理员 IP、allowlist 路径、刷新基线、查看/解除封禁、配置校验和服务重载。 |
-| `vs config validate` | 校验配置文件。 |
-| `vs config migrate` | 执行兼容配置迁移。 |
-| `vs config normalize` | 将 `[allowlist]`、`[suppress_rules]` 等支持的配置块重写成规范数组格式。 |
-| `vs config suppress-rule add CONFIG-004 --global` | 对已复核接受的风险按规则静默，不需要把底层文件排除出完整性监控。 |
+| `sudo vs doctor` | 检查配置、工具和采集可见性。 |
+| `sudo vs check --json` | 查看当前事实，不持久化、不通知、不封禁；不对比已保存基线。 |
+| `sudo vs scan --no-notify --json` | 保存扫描并比较基线，不通知、不执行主动响应。 |
+| `sudo vs baseline create` | 确认当前状态可信后建立基线。 |
+| `sudo vs baseline diff` | 复核相对基线的变化。 |
+| `sudo vs blocks list` / `sudo vs blocks why <ip> --json` | 查看封禁及实际到期时间。 |
+| `sudo vs blocks unblock <ip>` / `sudo vs blocks cleanup` | 解封或维护过期、失效封禁状态。 |
+| `sudo vs config validate` / `sudo vs reload` | 校验配置并重载服务。 |
+| `sudo vs menu` | 本地引导式配置与复核。 |
 
-## Token 类型
+## 已验证的结果
 
-系统只保留少量必要 token，避免个人项目中过度分层：
+**2026-10-01** 在 hyvps（Debian 13 x86_64）验证安全分支提交 `0d9e53f`：
 
-| Token 或 secret | 使用方 | 用途 | 是否必须 |
-| --- | --- | --- | --- |
-| `panel.secret` / `PANEL_SHARED_SECRET` | Agent 和面板 | `POST /api/v1/ingest` HMAC 签名。 | 启用面板上报时必须 |
-| `PANEL_NODE_SECRETS` | 面板 | 按非敏感节点名称配置单节点上报密钥。 | 可选 |
-| `PANEL_TOKEN` | 浏览器和面板 | 私有访问 token，用于详情、复核、审计日志和管理入口。 | 使用私有面板功能时必须 |
-| 通知渠道 token | Agent 和通知服务 | Telegram/Gotify/ntfy/Bark/ServerChan/钉钉/飞书/Webhook/邮件凭据。 | 仅启用对应渠道时需要 |
+| 检查 | 结果 |
+| --- | --- |
+| Debian/bookworm workspace | 546 项通过、0 失败；需要 Docker socket 的 1 项在宿主单独执行。 |
+| Alpine/musl workspace | 546 项通过、0 失败；同一项宿主专用测试跳过。 |
+| 宿主专项 | 13 项全部通过，包含 Docker socket 测试。 |
+| 构建与代码检查 | locked release、格式检查、严格 Clippy 通过。 |
+| 隔离运行 | 真实 SSH 失败和 HTTP 探测被识别、封禁；七类惰性入侵后样本被识别。 |
+| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.4 MiB，进程 CPU 约占单核 0.7%。 |
 
-部署脚本复用旧凭据文件时，会把旧的 `PANEL_ADMIN_TOKEN`、`PANEL_OPERATOR_TOKEN` 或 `PANEL_VIEW_TOKEN` 迁移为新的 `PANEL_TOKEN`。
+这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-01.md)。
 
-## 兼容性
+## 检测与处置边界
 
-Agent 面向常见 systemd Linux VPS，包括 Debian、Ubuntu、Alma/Rocky/RHEL 系、Fedora、Alpine、Arch 等。缺少平台工具时会降级而不是崩溃；部分采集器需要 root 可见性，`vs doctor` 会提示权限不足造成的能力下降。
+主动响应封禁来源 IP，不会自动杀进程、删除后门或恢复账户。实验脚本只清理自己的惰性样本，再独立复扫；不能把这个步骤当成产品自动清除入侵。
 
-常驻内存与启用模块、日志量、文件完整性范围有关。当前验证 VPS 集合中，daemon 进程 RSS 通常在个位数到二十 MiB 左右；systemd cgroup 内存可能因为文件缓存记账显得更高。
+audit 规则需要配置真实 audit 遥测。内置运行探针是可选组件，已经结束的瞬时活动可能躲过轮询快照：没有 audit/eBPF 数据源的实验未捕获短暂凭据读取和短暂外连。本 fork 不宣称具备完整 EDR 覆盖、软件包内容完整性验证或 rootkit 清除。权限/capability 比较只覆盖配置的监控文件，且需要包含对应字段的可信基线。
 
-## 隐私
+普通隔离容器只观察自身，不会自动监控宿主。运行镜像和实验不是宿主监控部署方案的替代。
 
-默认本地优先：不启用 `[panel]` 就不向面板上报，不配置通知就不发外部消息，文件扫描有大小限制，数据保存在本地 SQLite。面板遥测会移除节点 ID、主机 ID、服务器公网 IP、原始证据、路径、命令行和通用内部网络字段；节点名称、脱敏后的非 IP 主机名、国家、地区和城市等展示字段可以用于面板。已确认的外部攻击源 IP 可以在公开黑名单中展示，但公开黑名单不会展示节点名称。
+## 隐私、贡献与上游
 
-面板不是远程命令或 SSH 管理平面。刷新基线、修改 allowlist、解除封禁等特权操作保留在各节点本地 `vs` 命令中，避免面板被攻破后直接变成整组服务器的 SSH 跳板。
+默认使用本地 SQLite；面板上报和通知渠道需要配置。签名遥测对原始证据、路径、命令和服务器标识做脱敏；确认的攻击来源 IP 可以出现在公开黑名单中。面板不提供远程 SSH 或命令控制，特权操作保留在节点本地。
 
-token、密码、Webhook secret、SMTP 凭据、Cloudflare API token、面板 shared secret 应存放在本地配置、Worker secrets 或 systemd 环境文件中，源码仓库只保留示例占位符。
-
-## Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=cryptoli/vps-sentinel&type=Date)](https://www.star-history.com/#cryptoli/vps-sentinel&Date)
-
-## 许可证
-
-MIT License。见 [LICENSE](LICENSE) 和 [docs/open-source-license.md](docs/open-source-license.md)。
-
-## 贡献
-
-见 [CONTRIBUTING.md](CONTRIBUTING.md)。新规则必须是防御型、可解释、有证据、默认安全的。
-
-## 安全反馈
-
-请按照 [SECURITY.md](SECURITY.md) 私下报告安全漏洞。
+凭据存放在本地配置或部署 secret 中。[贡献说明](CONTRIBUTING.md) 提供开发和规则要求，[安全反馈](SECURITY.md) 说明私下报告方式。保留原作者署名和 [MIT 许可证](LICENSE)，见 [许可证说明](docs/open-source-license.md)。

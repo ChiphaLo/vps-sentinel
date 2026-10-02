@@ -1,5 +1,7 @@
 # Panel Deployment
 
+Run these commands from a checkout of this fork, selecting a branch as described in the [README](../README.md#fork-and-branch-status). The security experiment validates the agent; it is not evidence of a fresh Cloudflare panel deployment.
+
 The fleet panel is optional. Agents continue to monitor locally and push signed, bounded telemetry only when `[panel].enabled = true`.
 
 ## Deployment Modes

@@ -1,5 +1,7 @@
 # Agent 部署教程
 
+> **Fork 部署：** 本文示例从源码安装 `ChiphaLo/vps-sentinel:feat/security-coverage-phase1`。安全改动尚未进入 `main`。请同时传入 `REPO_URL`、`BRANCH` 和 `INSTALL_METHOD`；脚本默认地址仍是上游。见 [分支状态](../README.zh-CN.md#fork-与分支状态) 和 [带日期的实测报告](validation-2026-10-01.md)。
+
 本文说明如何在 Linux VPS 上安装和运维 `vps-sentinel` agent。多服务器面板部署见 [panel-deployment.zh-CN.md](panel-deployment.zh-CN.md)。
 
 ## 环境要求
@@ -7,7 +9,7 @@
 - 需要 root 或 sudo 权限。
 - 推荐 systemd。非 systemd 主机也可以手动运行 `vps-sentinel scan`。
 - 一键安装至少需要 `curl` 和 CA 证书。
-- 只有安装器无法使用兼容 release 二进制、需要回退源码编译时才需要 Rust。
+- 本文明确选择源码编译，因此需要 Rust 和临时构建空间；允许安装依赖时，安装器可以安装工具链。
 - 可选工具会增强可见性：`journalctl`、`ss`、`nft`、`iptables`、`dpkg`/`rpm`/`apk`/`pacman`、`nvidia-smi`、`rocm-smi`、`auditd`、`bpftrace`。
 
 ## 推荐完整一键安装
@@ -15,7 +17,9 @@
 真实节点建议第一次安装就把通知、面板上报、主动响应、存储限制和节点地域探测配置好：
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
@@ -26,27 +30,27 @@ sudo VPS_NAME="prod-web-1" \
   PANEL_PRIVACY_MODE="strict" \
   PANEL_UPLOAD_HOSTNAME="yes" \
   PANEL_NODE_LOCATION_ENABLED="yes" \
-  ACTIVE_RESPONSE_ENABLED="yes" \
-  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
+  ACTIVE_RESPONSE_ENABLED="no" \
+  ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
-这条命令会启用主要本地防护能力、Telegram 告警，以及向面板推送隐私脱敏后的遥测。如果不填写 `TELEGRAM_*`，就不会发送 Telegram；如果同时不填写 `PANEL_URL` 和 `PANEL_SHARED_SECRET`，就不会配置面板上报。
+这条命令会启用本地检测、Telegram 告警和面板脱敏上报。新安装先关闭自动 IP 封禁；检查告警和可信管理员白名单后再启用。已有配置仍然保留。如果不填写 `TELEGRAM_*`，就不会发送 Telegram；如果同时不填写 `PANEL_URL` 和 `PANEL_SHARED_SECRET`，就不会配置面板上报。
 
 ## 本地试用安装
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" ACTIVE_RESPONSE_ENABLED="no" ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
-这条最短命令只适合快速本地试用。它会安装守护进程和本地检测，但不会配置 Telegram、邮件/webhook 通知或面板上报。
+这条命令安装守护进程和本地检测，新安装先关闭自动 IP 封禁。它不配置 Telegram、邮件/webhook 通知或面板上报；已有配置仍然保留。
 
 安装脚本会：
 
 - 安装 `vps-sentinel` 和简写命令 `vs`；
 - 在 Debian/Ubuntu、RHEL 系、Fedora、Alpine、Arch 系主机上安装兼容依赖；
-- 优先使用能在当前机器执行的 release 二进制，不兼容时自动回退到源码编译；
+- 本文示例从源码构建明确指定的 fork 分支；
 - 仅在 `/etc/vps-sentinel/config.toml` 不存在时创建默认配置；
 - 校验配置、迁移兼容旧字段、同步新增默认字段、创建初始基线、执行一次不通知的预热扫描；
 - systemd 可用时安装并启动服务；
@@ -57,8 +61,10 @@ curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.
 推荐使用下面这种形式，便于查看脚本内容和错误输出：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh -o /tmp/vps-sentinel-install.sh
-sudo VPS_NAME="prod-web-1" \
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh -o /tmp/vps-sentinel-install.sh
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
@@ -68,11 +74,13 @@ sudo VPS_NAME="prod-web-1" \
 也可以写成一行：
 
 ```bash
-sudo VPS_NAME="prod-web-1" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" \
+  VPS_NAME="prod-web-1" \
   TELEGRAM_BOT_TOKEN="<your-bot-token>" \
   TELEGRAM_CHAT_ID="<your-chat-id>" \
   TELEGRAM_MIN_SEVERITY="Medium" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
 参数含义：
@@ -102,15 +110,16 @@ sudo VPS_NAME="prod-web-1" \
 ## 常用安装参数
 
 ```bash
-sudo BRANCH="main" \
-  INSTALL_METHOD="auto" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" \
+  INSTALL_METHOD="source" \
   INSTALL_DEPS="yes" \
   ACTIVE_RESPONSE_ENABLED="yes" \
   ACTIVE_RESPONSE_SSH_FAILED_LOGIN_BLOCK_THRESHOLD="4" \
   ACTIVE_RESPONSE_WEB_PROBE_BLOCK_THRESHOLD="25" \
   ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="yes" \
   STORAGE_MAX_DATABASE_SIZE_MB="256" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/install.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/install.sh | sh'
 ```
 
 常用变量说明：
@@ -118,7 +127,7 @@ sudo BRANCH="main" \
 | 变量 | 含义 |
 | --- | --- |
 | `BRANCH` | 源码检出分支，默认 `main`。 |
-| `REPO_URL` | Git 仓库地址，默认官方 GitHub 仓库。 |
+| `REPO_URL` | Git 仓库地址；脚本默认上游，本文显式指定 fork。 |
 | `INSTALL_METHOD` | `auto`、`release` 或 `source`。`auto` 会先验证 release 二进制，不兼容再源码编译。 |
 | `INSTALL_DEPS` | `yes` 或 `no`，是否通过系统包管理器安装依赖。 |
 | `INSTALL_SYSTEMD` | `auto`、`yes` 或 `no`，是否安装 systemd 服务。 |
@@ -138,20 +147,21 @@ sudo BRANCH="main" \
 ## 升级
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sudo sh
+curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sudo env REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" BRANCH="feat/security-coverage-phase1" INSTALL_METHOD="source" sh
 ```
 
-升级脚本会保留已有配置和状态。它会先验证目标二进制能否运行，再替换当前版本；如果二进制不兼容，会使用源码编译，并确保 Rust 有默认 stable toolchain。源码升级成功后默认清理 `$WORK_DIR/target`；只有明确需要保留 Rust 构建缓存时才设置 `CLEAN_SOURCE_TARGET=no`。
+升级脚本会保留已有配置和状态。它会先验证目标二进制能否运行，再替换当前版本；上面的 `INSTALL_METHOD=source` 明确构建所选分支，并确保 Rust 有默认 stable toolchain。源码升级成功后默认清理 `$WORK_DIR/target`；只有明确需要保留 Rust 构建缓存时才设置 `CLEAN_SOURCE_TARGET=no`。
 
 常用升级参数：
 
 ```bash
-sudo BRANCH="main" \
-  INSTALL_METHOD="auto" \
+sudo REPO_URL="https://github.com/ChiphaLo/vps-sentinel.git" \
+  BRANCH="feat/security-coverage-phase1" \
+  INSTALL_METHOD="source" \
   VALIDATE_CONFIG="yes" \
   MIGRATE_CONFIG="yes" \
   SYNC_CONFIG_DEFAULTS="yes" \
-  sh -c 'curl -fsSL https://raw.githubusercontent.com/cryptoli/vps-sentinel/main/update.sh | sh'
+  sh -c 'curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/feat/security-coverage-phase1/update.sh | sh'
 ```
 
 ## 服务操作
@@ -229,7 +239,7 @@ permanent_block_threshold = 3
 
 ```bash
 sudo vs blocks list
-sudo vs blocks unblock <ip>
+sudo vs blocks unblock '<ip>'
 sudo vs blocks unblock-all --yes
 sudo vs blocks cleanup
 ```
@@ -239,7 +249,7 @@ sudo vs blocks cleanup
 ```bash
 sudo vs baseline create
 sudo vs baseline diff
-sudo vs baseline approve <approval-key>
+sudo vs baseline approve '<approval-key>'
 ```
 
 软件包升级和计划维护可能产生合法漂移。刷新基线前请先看证据。
