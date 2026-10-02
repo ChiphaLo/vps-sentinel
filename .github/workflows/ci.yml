@@ -17,6 +17,9 @@ jobs:
       - name: Install panel UI dependencies
         working-directory: panel/ui
         run: npm ci
+      - name: Audit panel dependencies
+        working-directory: panel/ui
+        run: npm audit --audit-level=moderate
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -38,6 +41,12 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit@0.22.2
+          fallback: none
+      - name: Audit Rust dependencies
+        run: cargo audit --deny unsound
       - name: Panel contract generated files
         run: node scripts/generate-panel-contract.mjs --check
       - name: Format
