@@ -46,6 +46,8 @@ impl CollectContext {
 }
 
 /// A collector gathers host facts without deciding risk.
+// async-trait generates #[must_use] on boxed futures; Rust 1.99 flags the macro's attribute.
+#[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait Collector: Send + Sync {
     fn name(&self) -> &'static str;

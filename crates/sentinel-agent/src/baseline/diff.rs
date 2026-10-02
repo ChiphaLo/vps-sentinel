@@ -17,7 +17,7 @@ pub fn diff_snapshots(previous: &BaselineSnapshot, current: &BaselineSnapshot) -
 fn diff_files(previous: &BaselineSnapshot, current: &BaselineSnapshot, events: &mut Vec<RawEvent>) {
     for (path, now) in &current.files {
         match previous.files.get(path) {
-            Some(old) if old.hash != now.hash => {
+            Some(old) if old.hash != now.hash || file_metadata_changed(old, now) => {
                 events.push(file_diff_event("file_modified", path, Some(old), Some(now)))
             }
             None => events.push(file_diff_event("file_created", path, None, Some(now))),
@@ -31,6 +31,17 @@ fn diff_files(previous: &BaselineSnapshot, current: &BaselineSnapshot, events: &
     }
 }
 
+fn file_metadata_changed(old: &FileBaseline, now: &FileBaseline) -> bool {
+    [
+        (&old.mode_octal, &now.mode_octal),
+        (&old.uid, &now.uid),
+        (&old.gid, &now.gid),
+        (&old.file_capabilities, &now.file_capabilities),
+    ]
+    .iter()
+    .any(|(before, after)| !before.is_empty() && !after.is_empty() && before != after)
+}
+
 fn file_diff_event(
     kind: &str,
     path: &str,
@@ -40,6 +51,10 @@ fn file_diff_event(
     let mut event = RawEvent::new("baseline", kind).with_field("path", path);
     if let Some(previous) = previous {
         event = event
+            .with_field("previous_mode_octal", &previous.mode_octal)
+            .with_field("previous_uid", &previous.uid)
+            .with_field("previous_gid", &previous.gid)
+            .with_field("previous_file_capabilities", &previous.file_capabilities)
             .with_field("previous_hash", &previous.hash)
             .with_field("previous_size", &previous.size)
             .with_field("previous_executable", &previous.executable)
@@ -53,6 +68,10 @@ fn file_diff_event(
     }
     if let Some(current) = current {
         event = event
+            .with_field("mode_octal", &current.mode_octal)
+            .with_field("uid", &current.uid)
+            .with_field("gid", &current.gid)
+            .with_field("file_capabilities", &current.file_capabilities)
             .with_field("current_hash", &current.hash)
             .with_field("current_size", &current.size)
             .with_field("current_executable", &current.executable)

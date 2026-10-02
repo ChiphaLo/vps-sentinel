@@ -103,6 +103,13 @@ fn detect_process_events(
         .kind("process_snapshot")
         .chain(index.kind("process_exec"))
     {
+        // Keep terminated tasks in raw procfs facts, but do not report them as
+        // actively running malware while their parent has not reaped them.
+        if event.kind == "process_snapshot"
+            && matches!(event.field("process_state"), Some("Z" | "X" | "x"))
+        {
+            continue;
+        }
         let mut enriched = event.clone();
         if let Some(pid) = event.field("pid") {
             if let Some(outbound) = outbound_by_pid.get(pid) {

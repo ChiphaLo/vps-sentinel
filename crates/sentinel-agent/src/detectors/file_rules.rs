@@ -57,6 +57,20 @@ impl Detector for FileDetector {
                 Severity::High,
                 "A short-lived collector observed write, delete, rename, permission, or ownership activity on a sensitive file path.",
             ),
+            RuleMetadata::new(
+                "FILE-005",
+                "Privileged file state changed",
+                Category::FileIntegrity,
+                Severity::High,
+                "A monitored file gained or changed SUID/SGID permissions or privileged ownership relative to the baseline.",
+            ),
+            RuleMetadata::new(
+                "FILE-006",
+                "File capabilities changed",
+                Category::FileIntegrity,
+                Severity::High,
+                "A monitored file gained or changed Linux file capabilities relative to the baseline.",
+            ),
         ]
     }
 
@@ -70,6 +84,7 @@ impl Detector for FileDetector {
             }
             match event.kind.as_str() {
                 "file_created" | "file_modified" | "file_deleted" => {
+                    findings.extend(privileged_file_changes(event, ctx));
                     if is_authorized_keys_path(&path) {
                         findings.push(authorized_keys_changed(event, ctx));
                     } else if is_critical_path(&path) {
@@ -104,6 +119,86 @@ impl Detector for FileDetector {
         }
         findings
     }
+}
+
+fn privileged_file_changes(event: &RawEvent, ctx: &DetectContext) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let created = event.kind == "file_created";
+    let changed = |key: &str| {
+        let previous_key = format!("previous_{key}");
+        let before = event.field(&previous_key).unwrap_or_default();
+        let after = event.field(key).unwrap_or_default();
+        !after.is_empty()
+            && ((created && key == "mode_octal") || (!before.is_empty() && before != after))
+    };
+    let privileged = |key: &str| {
+        u32::from_str_radix(event.field(key).unwrap_or_default(), 8)
+            .map(|mode| mode & 0o6000 != 0)
+            .unwrap_or(false)
+    };
+    if (privileged("mode_octal") || privileged("previous_mode_octal"))
+        && ["mode_octal", "uid", "gid"].iter().any(|key| changed(key))
+    {
+        findings.push(privileged_file_finding(
+            event,
+            ctx,
+            "FILE-005",
+            "Privileged file state changed",
+        ));
+    }
+    let before = event
+        .field("previous_file_capabilities")
+        .unwrap_or_default();
+    let after = event.field("file_capabilities").unwrap_or_default();
+    if !after.is_empty()
+        && ((created && after != "none") || (!before.is_empty() && before != after))
+    {
+        findings.push(privileged_file_finding(
+            event,
+            ctx,
+            "FILE-006",
+            "File capabilities changed",
+        ));
+    }
+    findings
+}
+
+fn privileged_file_finding(
+    event: &RawEvent,
+    ctx: &DetectContext,
+    rule: &str,
+    title: &str,
+) -> Finding {
+    let mut items = Vec::new();
+    for key in [
+        "path",
+        "previous_hash",
+        "current_hash",
+        "previous_mode_octal",
+        "mode_octal",
+        "previous_uid",
+        "uid",
+        "previous_gid",
+        "gid",
+        "previous_file_capabilities",
+        "file_capabilities",
+    ] {
+        push_event_evidence_if_present(&mut items, event, key);
+    }
+    Finding::new(
+        &ctx.host_id,
+        title,
+        "Monitored file privilege metadata changed even if file contents stayed identical. Capability evidence contains the raw Linux xattr in hexadecimal.",
+        Severity::High,
+        Category::FileIntegrity,
+        rule,
+        string_field(event, "path"),
+    )
+    .with_evidence(items)
+    .with_recommendations(vec![
+        "Verify the change against an authorized package or administrator action before restoring the recorded permissions, owner, or capabilities.".to_string(),
+        "Preserve evidence and investigate execution and persistence; IP blocking does not remove an installed payload.".to_string(),
+    ])
 }
 
 fn sensitive_file_activity(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
@@ -268,7 +363,7 @@ fn critical_file_changed(
         RESOURCE_DRIFT_DEDUP_KEYS,
     )
     .with_impact(vec![
-        "Changes to identity, sudo, SSH, cron, or systemd files may affect persistence or privilege.".to_string(),
+        "Changes to identity, sudo, SSH, PAM, polkit, startup, kernel-module, or linker configuration may affect persistence or privilege.".to_string(),
     ])
     .with_recommendations(vec![
         "Review the file diff from a trusted shell session.".to_string(),
@@ -490,6 +585,9 @@ fn is_critical_path(path: &str) -> bool {
         "/etc/sudoers",
         "/etc/sudoers.d/",
         "/etc/ssh/",
+        "/etc/pam.d/",
+        "/etc/security/",
+        "/etc/polkit-1/rules.d/",
         "/etc/systemd/system/",
         "/etc/crontab",
         "/etc/cron.d/",
@@ -498,6 +596,16 @@ fn is_critical_path(path: &str) -> bool {
         "/etc/profile.d/",
         "/etc/bash.bashrc",
         "/etc/ld.so.preload",
+        "/etc/ld.so.conf",
+        "/etc/ld.so.conf.d/",
+        "/etc/modules",
+        "/etc/modules-load.d/",
+        "/etc/modprobe.d/",
+        "/etc/sysctl.conf",
+        "/etc/sysctl.d/",
+        "/etc/udev/rules.d/",
+        "/etc/apt/sources.list",
+        "/etc/apt/sources.list.d/",
     ]
     .iter()
     .any(|prefix| path == *prefix || path.starts_with(prefix))

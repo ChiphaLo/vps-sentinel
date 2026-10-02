@@ -30,6 +30,8 @@ pub struct NotifyContext {
 }
 
 /// Pluggable notification channel.
+// async-trait generates #[must_use] on boxed futures; Rust 1.99 flags the macro's attribute.
+#[allow(clippy::double_must_use)]
 #[async_trait]
 pub trait Notifier: Send + Sync {
     fn name(&self) -> &'static str;

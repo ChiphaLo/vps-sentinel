@@ -199,6 +199,8 @@ fn stable_key_fields(event: &RawEvent) -> BTreeMap<&str, &str> {
     let mut fields = BTreeMap::new();
     for key in [
         "current_hash",
+        "mode_octal",
+        "file_capabilities",
         "uid",
         "gid",
         "home",

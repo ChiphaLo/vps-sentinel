@@ -63,14 +63,32 @@ paths = [
   "/etc/passwd",
   "/etc/shadow",
   "/etc/group",
+  "/etc/gshadow",
   "/etc/sudoers",
   "/etc/sudoers.d",
   "/etc/ssh/sshd_config",
   "/etc/ssh/sshd_config.d",
+  "/etc/pam.d",
+  "/etc/security",
+  "/etc/polkit-1/rules.d",
   "/etc/systemd/system",
   "/etc/crontab",
   "/etc/cron.d",
   "/var/spool/cron",
+  "/etc/profile",
+  "/etc/profile.d",
+  "/etc/bash.bashrc",
+  "/etc/ld.so.preload",
+  "/etc/ld.so.conf",
+  "/etc/ld.so.conf.d",
+  "/etc/modules",
+  "/etc/modules-load.d",
+  "/etc/modprobe.d",
+  "/etc/sysctl.conf",
+  "/etc/sysctl.d",
+  "/etc/udev/rules.d",
+  "/etc/apt/sources.list",
+  "/etc/apt/sources.list.d",
   "/root/.ssh",
   "/home/*/.ssh"
 ]
@@ -156,6 +174,12 @@ enabled = true
 alert_on_privileged_container = true
 alert_on_docker_socket_mount = true
 alert_on_host_network = true
+alert_on_host_pid = true
+alert_on_host_root_mount = true
+alert_on_dangerous_capabilities = true
+docker_command = "docker"
+command_timeout_seconds = 3
+inspect_max_containers = 128
 
 [notifications]
 request_timeout_seconds = 15

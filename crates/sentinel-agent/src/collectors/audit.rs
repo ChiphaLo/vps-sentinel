@@ -86,10 +86,52 @@ fn parse_audit_line(line: &str, path: &str) -> Option<RawEvent> {
 
 fn parse_audit_fields(line: &str) -> BTreeMap<String, String> {
     let mut fields = BTreeMap::new();
-    for token in line.split_whitespace() {
-        if let Some((key, value)) = token.split_once('=') {
-            fields.insert(key.to_string(), unquote(value));
+    let mut chars = line.chars().peekable();
+    while chars.peek().is_some() {
+        while chars.peek().is_some_and(|ch| ch.is_whitespace()) {
+            chars.next();
         }
+        let mut key = String::new();
+        while chars
+            .peek()
+            .is_some_and(|ch| *ch != '=' && !ch.is_whitespace())
+        {
+            key.push(chars.next().expect("peeked character"));
+        }
+        if chars.next_if_eq(&'=').is_none() {
+            continue;
+        }
+        let quote = chars.next_if(|ch| matches!(ch, '"' | '\''));
+        let mut value = String::new();
+        while let Some(ch) = chars.peek().copied() {
+            if quote == Some(ch) {
+                chars.next();
+                break;
+            }
+            if quote.is_none() && ch.is_whitespace() {
+                break;
+            }
+            chars.next();
+            if quote.is_some() && ch == '\\' {
+                if let Some(escaped) = chars.next() {
+                    value.push(escaped);
+                }
+            } else {
+                value.push(ch);
+            }
+        }
+        // auditd hex-encodes unquoted string fields. Do not decode quoted
+        // arguments (e.g. "dead") or numeric metadata such as uid/argc.
+        let string_field = matches!(key.as_str(), "comm" | "exe" | "name")
+            || key
+                .strip_prefix('a')
+                .is_some_and(|index| index.parse::<usize>().is_ok());
+        if quote.is_none() && string_field {
+            if let Some(decoded) = decode_audit_hex(&value) {
+                value = decoded;
+            }
+        }
+        fields.insert(key, value);
     }
     fields
 }
@@ -110,11 +152,23 @@ fn audit_argv(fields: &BTreeMap<String, String>) -> String {
         .join(" ")
 }
 
-fn unquote(value: &str) -> String {
-    value
-        .trim_matches('"')
-        .trim_matches('\'')
-        .replace("\\\"", "\"")
+fn decode_audit_hex(value: &str) -> Option<String> {
+    if value.is_empty()
+        || value.len() % 2 != 0
+        || !value.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return None;
+    }
+    let bytes = value
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            let high = (pair[0] as char).to_digit(16)?;
+            let low = (pair[1] as char).to_digit(16)?;
+            Some(((high << 4) | low) as u8)
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some(String::from_utf8_lossy(&bytes).into_owned())
 }
 
 #[cfg(test)]
@@ -135,5 +189,31 @@ mod tests {
         assert_eq!(events[0].field("process_name"), Some("sh"));
         assert_eq!(events[0].field("ephemeral_event"), Some("true"));
         assert_eq!(events[0].field("event_source_detail"), Some("audit_execve"));
+    }
+
+    #[test]
+    fn preserves_quoted_spaces_and_decodes_unquoted_hex_arguments() {
+        let text = r#"type=EXECVE msg=audit(1710000000.1:99): argc=4 a0="sh" a1="-c" a2=636174202F6574632F736861646F77 a3="dead" uid=1000 comm="shell with spaces""#;
+        let event = &parse_audit_log(text, "/test/audit.log")[0];
+        assert_eq!(event.field("argv"), Some("sh -c cat /etc/shadow dead"));
+        assert_eq!(event.field("uid"), Some("1000"));
+        assert_eq!(event.field("comm"), Some("shell with spaces"));
+    }
+
+    #[test]
+    fn preserves_escaped_quotes_and_quoted_shell_commands() {
+        let text = r#"type=EXECVE argc=3 a0="sh" a1="-c" a2="cat \"/etc/shadow\"""#;
+        assert_eq!(
+            parse_audit_log(text, "/test/audit.log")[0].field("argv"),
+            Some("sh -c cat \"/etc/shadow\"")
+        );
+    }
+
+    #[test]
+    fn decodes_string_fields_without_decoding_numeric_metadata() {
+        let text = r#"type=SYSCALL uid=1000 exe=2F7573722F62696E2F636174 comm="cat""#;
+        let event = &parse_audit_log(text, "/test/audit.log")[0];
+        assert_eq!(event.field("exe"), Some("/usr/bin/cat"));
+        assert_eq!(event.field("uid"), Some("1000"));
     }
 }

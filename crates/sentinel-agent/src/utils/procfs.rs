@@ -69,6 +69,7 @@ pub fn collect_processes(root: &ProcfsRoot) -> SentinelResult<Vec<RawEvent>> {
         let socket_fd_count = socket_fd_count(&process_dir);
         let ppid = parse_status_value(&status, "PPid").unwrap_or_default();
         let name = parse_status_value(&status, "Name").unwrap_or_default();
+        let process_state = parse_status_first_value(&status, "State").unwrap_or_default();
         let uid = parse_status_first_value(&status, "Uid").unwrap_or_default();
         let euid = parse_status_indexed_value(&status, "Uid", 1).unwrap_or_default();
         let parent_name = read_trimmed(root.path().join(&ppid).join("comm"));
@@ -88,6 +89,7 @@ pub fn collect_processes(root: &ProcfsRoot) -> SentinelResult<Vec<RawEvent>> {
             .with_field("pid", pid.to_string())
             .with_field("ppid", ppid)
             .with_field("name", name)
+            .with_field("process_state", process_state)
             .with_field("parent_name", parent_name)
             .with_field("uid", uid)
             .with_field("euid", euid)

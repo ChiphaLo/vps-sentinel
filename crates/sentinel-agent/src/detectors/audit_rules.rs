@@ -26,6 +26,34 @@ impl Detector for AuditDetector {
                 Severity::Medium,
                 "auditd captured sudo, su, or pkexec launching a non-interactive command shell.",
             ),
+            RuleMetadata::new(
+                "AUDIT-003",
+                "Sensitive credential file access command",
+                Category::Privilege,
+                Severity::High,
+                "auditd captured a command explicitly reading or copying a high-value credential file.",
+            ),
+            RuleMetadata::new(
+                "AUDIT-004",
+                "Privilege persistence command",
+                Category::Privilege,
+                Severity::High,
+                "auditd captured a command that grants SUID/SGID or file capabilities.",
+            ),
+            RuleMetadata::new(
+                "AUDIT-005",
+                "Kernel module manipulation command",
+                Category::Rootkit,
+                Severity::Medium,
+                "auditd captured loading or unloading a kernel module.",
+            ),
+            RuleMetadata::new(
+                "AUDIT-006",
+                "Audit or logging service disable command",
+                Category::System,
+                Severity::High,
+                "auditd captured a command that disables auditd or a core logging service.",
+            ),
         ]
     }
 
@@ -39,6 +67,18 @@ impl Detector for AuditDetector {
                 findings.push(finding);
             }
             if let Some(finding) = audit_privilege_execution(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_sensitive_credential_access(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_privilege_persistence(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_kernel_module_manipulation(event, ctx) {
+                findings.push(finding);
+            }
+            if let Some(finding) = audit_logging_disable(event, ctx) {
                 findings.push(finding);
             }
         }
@@ -104,6 +144,254 @@ fn audit_privilege_execution(event: &RawEvent, ctx: &DetectContext) -> Option<Fi
             "Confirm the session, parent process, and operator identity around this audit record.".to_string(),
         ]),
     )
+}
+
+fn audit_sensitive_credential_access(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    let target = sensitive_credential_target(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Sensitive credential file access command",
+            "A command captured by auditd explicitly referenced a high-value local credential file.",
+            Severity::High,
+            Category::Privilege,
+            "AUDIT-003",
+            target,
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("credential_target", target),
+            evidence("risk_reason", "command explicitly referenced a sensitive credential path"),
+            evidence("risk_score", "80"),
+        ]))
+        .with_impact(vec![
+            "Credential material can be used for privilege escalation, persistence, or lateral movement.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Confirm the operator and purpose of the access.".to_string(),
+            "If unexpected, rotate affected credentials and review subsequent authentication activity.".to_string(),
+        ]),
+    )
+}
+
+fn audit_privilege_persistence(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    let technique = privilege_persistence_technique(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Privilege persistence command",
+            "A command captured by auditd appears to grant SUID/SGID permissions or Linux file capabilities.",
+            Severity::High,
+            Category::Privilege,
+            "AUDIT-004",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("privilege_persistence_technique", technique),
+            evidence("risk_reason", "command can create a privileged executable"),
+            evidence("risk_score", "85"),
+        ]))
+        .with_impact(vec![
+            "Unexpected SUID/SGID bits or file capabilities can provide durable privilege escalation.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Verify the target file, package ownership, and change ticket before accepting the change.".to_string(),
+            "Remove unexpected privilege bits or capabilities after preserving evidence.".to_string(),
+        ]),
+    )
+}
+
+fn sensitive_credential_target(argv: &str) -> Option<&'static str> {
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    let read_like = tokens.iter().any(|token| {
+        matches!(
+            token_basename(token).as_str(),
+            "cat"
+                | "head"
+                | "tail"
+                | "less"
+                | "more"
+                | "grep"
+                | "awk"
+                | "sed"
+                | "cp"
+                | "scp"
+                | "rsync"
+                | "tar"
+                | "base64"
+                | "xxd"
+        )
+    });
+    if !read_like {
+        return None;
+    }
+
+    for token in tokens {
+        let path = token.trim_matches(['"', '\'', ';', '(', ')']);
+        if matches!(path, "/etc/shadow" | "/etc/gshadow") {
+            return Some(if path == "/etc/shadow" {
+                "/etc/shadow"
+            } else {
+                "/etc/gshadow"
+            });
+        }
+        if path.contains("/.ssh/id_") && !path.ends_with(".pub") {
+            return Some(if path.starts_with("/root/.ssh/id_") {
+                "root SSH private key"
+            } else {
+                "SSH private key"
+            });
+        }
+        if path.ends_with("/.aws/credentials") {
+            return Some("AWS credentials");
+        }
+        if path.contains("/.config/gcloud/") {
+            return Some("Google Cloud credentials");
+        }
+        if path.ends_with("/.kube/config") {
+            return Some("Kubernetes credentials");
+        }
+    }
+    None
+}
+
+fn privilege_persistence_technique(argv: &str) -> Option<&'static str> {
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    for (index, token) in tokens.iter().enumerate() {
+        let args = &tokens[index + 1..];
+        match token_basename(token).as_str() {
+            "setcap" if !args.iter().any(|arg| matches!(*arg, "-r" | "-v")) => {
+                if args
+                    .iter()
+                    .any(|arg| arg.contains('+') || arg.contains('='))
+                {
+                    return Some("file_capability");
+                }
+            }
+            "chmod" => {
+                if args
+                    .iter()
+                    .any(|arg| *arg == "--reference" || arg.starts_with("--reference="))
+                {
+                    continue;
+                }
+                if args
+                    .iter()
+                    .find(|arg| !arg.starts_with('-'))
+                    .is_some_and(|mode| grants_privilege_bits(mode))
+                {
+                    return Some("suid_sgid");
+                }
+            }
+            "install" => {
+                for (index, arg) in args.iter().enumerate() {
+                    let mode = if matches!(*arg, "-m" | "--mode") {
+                        args.get(index + 1).copied()
+                    } else {
+                        arg.strip_prefix("--mode=")
+                            .or_else(|| arg.strip_prefix("-m"))
+                    };
+                    if mode.is_some_and(grants_privilege_bits) {
+                        return Some("suid_sgid");
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+fn grants_privilege_bits(mode: &str) -> bool {
+    let mode = mode.trim_matches(['"', '\'']);
+    if let Ok(bits) = u16::from_str_radix(mode, 8) {
+        return bits <= 0o7777 && bits & 0o6000 != 0;
+    }
+    mode.split(',').any(|clause| {
+        clause
+            .split_once(['+', '='])
+            .is_some_and(|(_, permissions)| permissions.contains('s'))
+    })
+}
+
+fn audit_kernel_module_manipulation(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    let tool = kernel_module_tool(&argv)?;
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Kernel module manipulation command",
+            "A command captured by auditd loaded or unloaded a kernel module.",
+            Severity::Medium,
+            Category::Rootkit,
+            "AUDIT-005",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("kernel_module_tool", tool),
+            evidence("risk_reason", "kernel module state was explicitly changed"),
+            evidence("risk_score", "60"),
+        ]))
+        .with_recommendations(vec![
+            "Confirm the module change matches expected driver or maintenance activity.".to_string(),
+            "If unexpected, inspect the module path, signer, package ownership, and recent privilege activity.".to_string(),
+        ]),
+    )
+}
+
+fn audit_logging_disable(event: &RawEvent, ctx: &DetectContext) -> Option<Finding> {
+    let argv = audit_command(event);
+    if !logging_disable_command(&argv) {
+        return None;
+    }
+    Some(
+        Finding::new(
+            &ctx.host_id,
+            "Audit or logging service disable command",
+            "A command captured by auditd appears to disable auditing or a core logging service.",
+            Severity::High,
+            Category::System,
+            "AUDIT-006",
+            audit_subject(event, &argv),
+        )
+        .with_evidence(audit_common_evidence(event, &argv, vec![
+            evidence("risk_reason", "security logging was explicitly disabled"),
+            evidence("risk_score", "90"),
+        ]))
+        .with_impact(vec![
+            "Disabling audit or logging reduces visibility into subsequent attacker activity.".to_string(),
+        ])
+        .with_recommendations(vec![
+            "Verify the maintenance context immediately and restore logging if the action was not expected.".to_string(),
+            "Preserve remaining logs and correlate with privilege, process, and persistence findings.".to_string(),
+        ]),
+    )
+}
+
+fn kernel_module_tool(argv: &str) -> Option<&'static str> {
+    let tokens = argv.split_whitespace().collect::<Vec<_>>();
+    for token in tokens.iter().take(3) {
+        match token_basename(token).as_str() {
+            "insmod" => return Some("insmod"),
+            "modprobe" => return Some("modprobe"),
+            "rmmod" => return Some("rmmod"),
+            _ => {}
+        }
+    }
+    None
+}
+
+fn logging_disable_command(argv: &str) -> bool {
+    let lowered = argv.to_ascii_lowercase();
+    lowered.contains("auditctl -e 0")
+        || lowered.contains("auditctl -e=0")
+        || lowered.contains("systemctl stop auditd")
+        || lowered.contains("systemctl disable auditd")
+        || lowered.contains("service auditd stop")
+        || lowered.contains("systemctl stop rsyslog")
+        || lowered.contains("systemctl disable rsyslog")
+        || lowered.contains("systemctl stop systemd-journald")
 }
 
 fn audit_common_evidence(event: &RawEvent, argv: &str, mut extra: Vec<Evidence>) -> Vec<Evidence> {
@@ -199,7 +487,7 @@ fn token_basename(token: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::AuditDetector;
+    use super::{privilege_persistence_technique, sensitive_credential_target, AuditDetector};
     use crate::detectors::{DetectContext, Detector};
     use sentinel_core::{RawEvent, SentinelConfig};
     use std::sync::Arc;
@@ -232,6 +520,110 @@ mod tests {
         assert!(findings
             .iter()
             .any(|finding| finding.rule_id == "AUDIT-002"));
+    }
+
+    #[test]
+    fn detects_sensitive_credential_read() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "cat /etc/shadow")
+            .with_field("exe", "/usr/bin/cat")
+            .with_field("comm", "cat");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-003"));
+    }
+
+    #[test]
+    fn detects_setcap_persistence() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "setcap cap_setuid+ep /tmp/helper")
+            .with_field("exe", "/usr/sbin/setcap")
+            .with_field("comm", "setcap");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-004"));
+    }
+
+    #[test]
+    fn recognizes_numeric_and_symbolic_privilege_modes() {
+        for command in [
+            "/usr/bin/chmod 2755 /tmp/helper",
+            "chmod 02755 /tmp/helper",
+            "chmod a+s /tmp/helper",
+            "chmod u-s,g+s /tmp/helper",
+            "chmod g=rxs /tmp/helper",
+            "install -m2755 /tmp/helper /opt/helper",
+            "install --mode=4750 /tmp/helper /opt/helper",
+        ] {
+            assert_eq!(
+                privilege_persistence_technique(command),
+                Some("suid_sgid"),
+                "{command}"
+            );
+        }
+    }
+
+    #[test]
+    fn ignores_privilege_removal_and_modes_used_as_filenames() {
+        for command in [
+            "chmod 0644 4755",
+            "chmod u-s,g-s /tmp/helper",
+            "chmod --reference=4755 /tmp/helper",
+            "setcap -r /tmp/helper",
+            "setcap -v cap_setuid+ep /tmp/helper",
+            "install -m 0755 /tmp/helper /opt/helper",
+        ] {
+            assert_eq!(privilege_persistence_technique(command), None, "{command}");
+        }
+    }
+
+    #[test]
+    fn public_key_exception_does_not_hide_private_key_in_same_command() {
+        assert_eq!(
+            sensitive_credential_target(
+                "/usr/bin/cat /root/.ssh/id_ed25519.pub /root/.ssh/id_ed25519"
+            ),
+            Some("root SSH private key")
+        );
+        assert_eq!(sensitive_credential_target("cat /etc/shadow.example"), None);
+    }
+
+    #[test]
+    fn detects_kernel_module_manipulation() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "sudo modprobe dummy")
+            .with_field("exe", "/usr/sbin/modprobe")
+            .with_field("comm", "modprobe");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-005"));
+    }
+
+    #[test]
+    fn detects_logging_disable_command() {
+        let ctx = DetectContext::new(Arc::new(SentinelConfig::default()));
+        let event = RawEvent::new("auditd", "audit_exec")
+            .with_field("argv", "systemctl stop auditd")
+            .with_field("exe", "/usr/bin/systemctl")
+            .with_field("comm", "systemctl");
+
+        let findings = AuditDetector.detect(&[event], &ctx);
+
+        assert!(findings
+            .iter()
+            .any(|finding| finding.rule_id == "AUDIT-006"));
     }
 
     #[test]
