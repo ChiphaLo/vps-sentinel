@@ -8,6 +8,7 @@
 - Fix command deadlines when descendant processes retain stdout; terminate the command process group on timeout.
 - Make cached source install/update honor `REPO_URL`; default repository and package metadata to this fork, retaining explicit overrides.
 - Add meaningful command-timeout, source-checkout and Worker/SQLite regressions; ensure CI installs `rustfmt` for generated panel contracts.
+- Update Next.js/PostCSS and compatible Rust TLS/error/concurrency dependencies to address current advisories; add npm and RustSec audit checks to CI, preserving the documented pre-existing RSA exception.
 - [Dated validation](docs/validation-2026-10-02.md): Debian/Alpine 548 passed each, host 13, isolated lab 19, Worker 14 and headless Rust-panel browser 9; update installation instructions to `main`.
 
 ## 0.3.1

@@ -78,7 +78,7 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
 
 ## 已验证的结果
 
-**2026-10-02** 在 hyvps（Debian 13 x86_64）验证合并候选版本，并核对已合并 `main` 的文件树完全一致：
+**2026-10-02** 在 hyvps（Debian 13 x86_64）验证合并候选版本，并核对合并文件树一致；之后的依赖安全更新 [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) 另行完成了完整验证：
 
 | 检查 | 结果 |
 | --- | --- |
@@ -88,7 +88,8 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
 | 构建与代码检查 | locked release、格式检查、严格 Clippy 通过。 |
 | 隔离运行 | 真实 SSH 失败和 HTTP 探测被识别、封禁；七类惰性入侵后样本被识别。 |
 | 安装与面板 | 安装包与源码仓库切换、共享契约、UI 类型检查/构建、14 项 Worker/SQLite 校验及 9 项 Rust 面板无头浏览器检查通过。 |
-| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.63%。 |
+| 依赖审计 | npm 0 项；RustSec 无非豁免漏洞和警告，保留报告中已说明的 RSA 例外。 |
+| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.74%。 |
 
 这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-02.md)。
 

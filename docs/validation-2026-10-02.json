@@ -2,24 +2,309 @@
   "date": "2026-10-02",
   "timezone": "Asia/Hong_Kong",
   "environment": "hyvps Debian 13 x86_64",
-  "candidate_commit": "33010d25a0fbdb67f9972ef159e28799792bf900",
-  "candidate_tree": "b7d6ebaa5c9c554374a9dee9eb52003bbb8adb94",
-  "feature_head": "56287ce93367daf982f2246ffd0e81ea9344e006",
-  "source_files_sha256": {
+  "merge_commit": "b43a7006b2eef9e458822d1825fed420b987e034",
+  "initial_merge": {
+    "candidate_commit": "33010d25a0fbdb67f9972ef159e28799792bf900",
+    "candidate_tree": "b7d6ebaa5c9c554374a9dee9eb52003bbb8adb94",
+    "feature_head": "56287ce93367daf982f2246ffd0e81ea9344e006",
+    "agent_binary_sha256": "bde30212d0b970466233e3e958ca04befb8f180c4fce0ce43828677f0cf48367",
+    "tests": {
+      "workspace": {
+        "passed": 548,
+        "failed": 0,
+        "ignored": 1
+      },
+      "alpine": {
+        "passed": 548,
+        "failed": 0,
+        "ignored": 1
+      },
+      "host-regressions": {
+        "passed": 13,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "initial_merge_tree_verified": true,
+  "tested_runtime_code_commit": "7051a267d94b5b8e83a1438962ebaaf795ec771b",
+  "tested_runtime_code_tree": "1044e71e385b93abae1be55e8eb453f69caf93fb",
+  "checks": {
+    "dependency-rust_exit": 0,
+    "dependency-alpine_exit": 0,
+    "dependency_exit": 0,
+    "dependency-runtime_exit": 0,
+    "browser_exit": 0
+  },
+  "tests": {
+    "workspace": {
+      "passed": 548,
+      "failed": 0,
+      "ignored": 1
+    },
+    "alpine": {
+      "passed": 548,
+      "failed": 0,
+      "ignored": 1
+    },
+    "host-regressions": {
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "runtime_lab": {
+    "cases": {
+      "benign_http_has_no_attack_alert": true,
+      "real_ssh_failures_detected": true,
+      "ssh_firewall_block_applied": true,
+      "blocked_source_cannot_reach_http": true,
+      "unblock_restores_connectivity": true,
+      "real_http_probes_detected": true,
+      "web_firewall_block_applied": true,
+      "web_block_stops_new_connections": true,
+      "suid_sgid_without_content_change": true,
+      "capability_without_content_change": true,
+      "cron_persistence": true,
+      "unauthorized_ssh_key_change": true,
+      "webshell_content": true,
+      "miner_identity_process": true,
+      "additional_uid_zero_account": true,
+      "no_unadvertised_destructive_remediation": true,
+      "rescan_confirms_fixture_cleanup": true,
+      "expired_block_cleanup_restores_connectivity": true,
+      "daemon_sigint_exits_successfully": true
+    },
+    "limitations": [
+      "The product blocks public-source IPs; it does not kill processes, remove payloads, or restore accounts.",
+      "Cleanup is performed by the lab harness against its own fixtures, then independently rescanned.",
+      "Container-only visibility: no host PID/network, Docker socket, host root mounts, auditd, or eBPF.",
+      "Brief credential reads and short-lived outbound connections are negative coverage probes, not guaranteed detections."
+    ],
+    "images_bytes": {
+      "runtime": 104348730,
+      "fixture": 161753192
+    },
+    "isolation": {
+      "internal_network": true,
+      "target": {
+        "Privileged": false,
+        "PidMode": "",
+        "NetworkMode": "internal lab network",
+        "Binds": null,
+        "PortBindings": {},
+        "CapAdd": [
+          "NET_ADMIN"
+        ]
+      }
+    },
+    "scans": {
+      "clean": {
+        "seconds": 0.233,
+        "rss_kb": 12592,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "external-ssh": {
+        "seconds": 0.291,
+        "rss_kb": 12620,
+        "collector_errors": [],
+        "rules": [
+          "SSH-003"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "external-web": {
+        "seconds": 0.29,
+        "rss_kb": 12628,
+        "collector_errors": [],
+        "rules": [
+          "WEB-001"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "internal-compromise": {
+        "seconds": 0.4,
+        "rss_kb": 12732,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "telemetry-coverage-probes": {
+        "seconds": 0.303,
+        "rss_kb": 12952,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "after-harness-cleanup": {
+        "seconds": 0.242,
+        "rss_kb": 12424,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      }
+    },
+    "web_block": {
+      "backend": "iptables",
+      "blocked_at": "2026-10-02T11:59:43.381091575Z",
+      "expired": false,
+      "expires_at": "2026-10-02T12:00:13.381091575Z",
+      "finding_id": "lab fixture",
+      "firewall_present": true,
+      "ip": "lab fixture",
+      "reason": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=6 layer=high_confidence_web_exploit",
+      "rule_id": "WEB-001"
+    },
+    "automatic_payload_cleanup_supported": false,
+    "negative_coverage_probes": {
+      "brief_shadow_read_detected": false,
+      "brief_connect_event_count": 0,
+      "note": "No audit/eBPF source enabled; snapshots cannot reliably capture already completed activity."
+    },
+    "daemon_rss_kb": {
+      "min": 12560,
+      "max": 12636,
+      "samples": 15
+    },
+    "daemon_cpu_percent_one_core": 0.736,
+    "result": "passed",
+    "host_firewall_unchanged": true
+  },
+  "browser_smoke": {
+    "result": "passed",
+    "cases": [
+      "anonymous API hides management path",
+      "private API rejects anonymous request",
+      "public UI renders without horizontal overflow at 1440px",
+      "management UI requires token at 1440px",
+      "management login succeeds at 1440px",
+      "public UI renders without horizontal overflow at 390px",
+      "management UI requires token at 390px",
+      "management login succeeds at 390px",
+      "no uncaught browser JavaScript errors"
+    ],
+    "failed": 0,
+    "browser": "headless Chromium (Playwright 1.55.0)",
+    "backend": "real Rust panel with isolated SQLite, loopback only; empty fleet"
+  },
+  "audits": {
+    "rust": {
+      "vulnerabilities": 0,
+      "warnings": {},
+      "existing_ignored_advisories": [
+        "RUSTSEC-2023-0071"
+      ],
+      "database": {
+        "advisory-count": 1280,
+        "last-commit": null,
+        "last-updated": null
+      },
+      "advisory_database_commit": "117edb3bed98e9be112f277b7615eea3252e7c43"
+    },
+    "npm": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "cleanup": {
+    "production_containers_unchanged": true,
+    "services_unchanged": true,
+    "ipv4_ipv6_firewall_unchanged": true,
+    "temporary_builders_removed": true
+  },
+  "agent_binary_sha256": "ebcac08c0fa837a0c473c5c95a5e9f8a9d8eb7cda1021827c3f208b4ea1d6291",
+  "changed_source_files_sha256": {
+    "Cargo.lock": "2806a69b4ef1bb1c4cac362c544a4ac1413b3bee36ebfca5563b2f07dd731cd2",
+    "panel/ui/next-env.d.ts": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
+    "panel/ui/package.json": "4d1b8f08f98a2fcbad3a88684ab1a277c413d0fe02c025f40a2cee350cfd9a66",
+    "panel/ui/package-lock.json": "68904dd057a183115e7a818644b0819f083544c4e57fd5412a54dc3a8406582b"
+  },
+  "host_passive_check": {
+    "raw_event_count": 937,
+    "finding_count": 9,
+    "collector_errors": [],
+    "active_response_applied_count": 0,
+    "notification_attempt_count": 0,
+    "memory_rss_after_kb": 12660,
+    "rule_ids": [
+      "CONFIG-001",
+      "CONFIG-004",
+      "DOCKER-001",
+      "PERSIST-002",
+      "SSH-001",
+      "SSH-003"
+    ]
+  },
+  "frontend_build_retry": {
+    "initial_exit": 137,
+    "docker_oom_event_observed": true,
+    "final_exit": 0,
+    "note": "Initial Docker OOM event observed during execution. Final build passed after increasing isolated build memory and bounding the Node heap."
+  },
+  "browser_script_sha256": "250aefb3a936970c92e931c27a85e966bda2cc7a120bd59d7132a080051c883c",
+  "worker_smoke": {
+    "passed": 14,
+    "failed": 0,
+    "backend": "real Node SQLite adapter for Worker SQL; no live Cloudflare/D1 deployment"
+  },
+  "git_checkout_smoke": {
+    "scripts": [
+      "install.sh",
+      "update.sh"
+    ],
+    "cases_per_script": [
+      "switch cached origin",
+      "repeat selected repository",
+      "explicit override",
+      "fresh clone"
+    ],
+    "result": "passed"
+  },
+  "github_actions": {
+    "verified": false,
+    "total_runs_for_runtime_commit": 0,
+    "commit_statuses": [],
+    "reason": "GitHub REST Actions and combined commit status returned no runs/statuses."
+  },
+  "tested_runtime_source_files_sha256": {
     ".cargo/audit.toml": "732f346f17bf8d7c509d003cfb8d6584de2517510ef34b28235d0920d8e4653b",
     ".gitattributes": "d62d45468aa4ba6c801c77587dc85defdb89e9c2a4daf5cdeb86ac5f4833654e",
-    ".github/workflows/ci.yml": "4b7aba8f33fb64ce429a0b5c976c1979cb84d405f372859dc1a35e553b3764e4",
-    ".github/workflows/release.yml": "9a7f4ae1998a9b318c677316712d735f7f083e91f36fca229d46c80fff96fa84",
     ".gitignore": "7908f850b8bec93716fb83d2e289f79944c8f9cf6ab6110035c966cc92a9709a",
-    "CHANGELOG.md": "a695452d8c40932e67e5db19e5dcaca44948f1dea96c381c09f07486ce35a234",
-    "CONTRIBUTING.md": "2a5080c787b8d5ff3601d48c7f6ff430f822eb6a2d5ef98bbd5d1eb709e3ddce",
-    "Cargo.lock": "fa319ff575e07e1106bc2eb9a694b6887589b595ab056f36092dbbfbb8b0a32d",
+    "Cargo.lock": "2806a69b4ef1bb1c4cac362c544a4ac1413b3bee36ebfca5563b2f07dd731cd2",
     "Cargo.toml": "84c818cb7489356966aa8b3496b4cb4136319c70ed8e4c5df95d09f21427cd5f",
     "LICENSE": "b9e4f9921c18840deda23820efa253f78bb41ddea243e6a3d48ad3e33cc47dc6",
-    "README.md": "713a4039de4e2d628d1eb9b5d146b36c946d510c76b42fcaefbd465b901b3910",
-    "README.zh-CN.md": "a074f4f48c3f6e16b090e80a974001c34c14b5c8ef9def154c23d633fd97d48c",
-    "RELEASE.md": "4b8b44e24867fd49ab8ae399c76546cd31edbddae58bfc90d2a1eec883fc461f",
-    "SECURITY.md": "466e9d07d50e01ff9d94a5c3b0c65732d8e37dcab1873e4d357ad391a57ab324",
     "config/config.example.toml": "1c66da0a495d4bb9b7ff128d47acfc7017a7b90f4ef3dfca638568f982a83ae8",
     "crates/sentinel-agent/Cargo.toml": "98df7924e6d83d0a3fc125fb7079d1baf86a326d57030183dfc9b8c0d10fda72",
     "crates/sentinel-agent/src/active_response.rs": "3d0003338ef426dfa3fa10365b12b4e832d20460f5853359fb13b9f4b5156d41",
@@ -184,43 +469,6 @@
     "crates/sentinel-panel/src/repository.rs": "da79d35d151c62af9d23cc42e72aec820c0148f666b8e703de2f319838448ed4",
     "crates/sentinel-panel/src/stream.rs": "35ff6d277dc52387669b140dc0291a093038f5c1fc6936085089da20e13b09df",
     "crates/sentinel-panel/src/tests.rs": "4ca61489de6485569bfdb28117b4e4bf26e0ae9af3583107b174ace2cc5d0a4c",
-    "docs/config-reference.md": "66980696d2cc714de6daaa900fab167eeb86c687ce34572adc6e8812cf4d9403",
-    "docs/config-reference.zh-CN.md": "11e75a04b9d476e9b82b36d8b60084be4dece92e4e3d62c2ee510110a8ea2224",
-    "docs/container-lab.zh-CN.md": "11918d3464321fd30ce5c42d7b1be3e501c0b693c087fe040d9930db8675770d",
-    "docs/deployment.md": "c7cb7c1bf0776c32a767fcb0eea904011adf80b1bdd10bc0c16ce9c92118f459",
-    "docs/deployment.zh-CN.md": "1cc39d056a6589bb119df3212ea4f462f8a4b72fa46dc289733e5f1620943abf",
-    "docs/design/panel-nextjs/baseline.png": "49485e99c242493f8e45be331f2b62dac66e1170c3a59588e31ec427b87c8fc2",
-    "docs/design/panel-nextjs/blocks.png": "4ba8de3224681333126d26c1157ec9acbe5c5c66a57a0ee9157799e689b3e691",
-    "docs/design/panel-nextjs/findings.png": "ddef290715da4950b81087be3ef4ab206ca39a9eadf508dcb4c1b329a63580ce",
-    "docs/design/panel-nextjs/incidents.png": "1a6e584e56d68f6270fe33aa6cdfeedd9c08d346f507a03581d428038d27213c",
-    "docs/design/panel-nextjs/mobile-blocks-blacklist-audit-nodes.png": "478bd37bf396ca6d254ca39be86019ba370834d6e6e5dc8f3e0a4b0427f69d37",
-    "docs/design/panel-nextjs/mobile-overview-findings-incidents-baseline.png": "02bac9896f0674411d236985461c83c391c9493007a1153b66242a1a387d76dc",
-    "docs/design/panel-nextjs/nodes.png": "4667dce957fbfe4c80cc59abe0259b7ac97a78e887d64dd02c4a1fad688970f3",
-    "docs/design/panel-nextjs/overview.png": "fa73e6bb04138559a8d37650cd77dd06ca5117e13b2204c05e77959308a6b21a",
-    "docs/false-positive.md": "3595d81e1547a31ca9efcb1e1692f13a35041dd95d74bc79b64b93cfa93a851b",
-    "docs/false-positive.zh-CN.md": "03794ced4d7da0dd8682879625a357134a58cc782d0a02b89d1287bc329da56d",
-    "docs/implementation-audit-2026-06-17.md": "f09f78d23a2a16163045faaa7d05cd46fc26063c0d744f7f53aebb1783a9a127",
-    "docs/implementation-audit-2026-06-17.zh-CN.md": "8e038fa436dde7e03cc3d277ade405994f2dbd9532e850344180b3cb592bb633",
-    "docs/notifier-plugin.md": "b74c6b6bf3c1f2f60c1c6e04dc0a4168eb6fad54bccfedccddb2d1a91bc39676",
-    "docs/notifier-plugin.zh-CN.md": "238e338c7b6e62dab094289a3c1194590a67e03906b63ed0b6b088fbca7d8c83",
-    "docs/open-source-license.md": "90ce3a5ca71ee0824f401d0da5b4c0b1c604b2e00507e1350bd602e63df6e772",
-    "docs/open-source-license.zh-CN.md": "5b5b762462b8fc2da1fd48f6306de2c105f37dc1ffcc200c6418952f39f9b608",
-    "docs/panel-architecture.md": "9dd992e34edc65d865a7476730b9b749176eec27f84829a44e9d183ba8cb915c",
-    "docs/panel-architecture.zh-CN.md": "803ee925d4612ef48a3533a85cc603315d829f8c6cf6d1529ee40dfd53f47237",
-    "docs/panel-deployment.md": "9d948bd5747c510c8f4a7cf0ad03faf595374f54cd41ef46149b08abda430932",
-    "docs/panel-deployment.zh-CN.md": "0e82afb56df41e2be6b7a89136db3b60394a2bde2f0793e57c0db6b9a296b18d",
-    "docs/panel-themes.md": "b605f97c1bad5e3a70145986001988e8ed4517416083caee61e12be3b23d616e",
-    "docs/panel-themes.zh-CN.md": "ada0ff916505bde1d6eba6f64701c6210feb9f73a6b539a17378eb47e70dfa4b",
-    "docs/panel.md": "422a4db4ac3b7bf5b7b4a4aa56e3e769bac172817da99bce57826f4f131e1951",
-    "docs/panel.zh-CN.md": "441ac43eed9f3e33a16d116e6f5e5143a419213b61ea668e56dc6aa69f8ffd8d",
-    "docs/privacy.md": "d433eeaa812d70029c67f04edf4409af05a98bb96015e7e9348877735cc1ad4e",
-    "docs/privacy.zh-CN.md": "f1cdeb434fb3c4c2f697553e3ba5db0bea66c3e9906ef8710ead9562d2df7fbe",
-    "docs/rule-writing.md": "d32f309dae4a6ea571aff9c6870ec9cd66cbb3f5b0fc2afac075d8a7a1e6a954",
-    "docs/rule-writing.zh-CN.md": "3aaa559759af73699ecb9e315724ed4b0baf32a0d73bdcfa2aae08b67eb028b4",
-    "docs/threat-model.md": "be70a415dda6c2b54e8021c8ee0add3b601507b2ee174d1dd6afc0dbd82249d3",
-    "docs/threat-model.zh-CN.md": "c29ee550f49b214bac8aad49b41d670ad94d88916424dee600747a24e88abff8",
-    "docs/validation-2026-10-01.json": "d4af4ca2fcf60a21fb9d1f07366e5e9f53a77b90a44b5bf7387f10481f614dee",
-    "docs/validation-2026-10-01.md": "ebeae6d33a961603e47a5ba4b8d89159c61b866eb0845d5e05ad94c950a4ffa5",
     "install.sh": "e9347987c37b90e8e7fef611fe408d2e20b5e67c054879a6332461699448b28e",
     "packaging/Dockerfile": "e1f30ade1b9537130e531618b8224f2b11570bc3aa1729236be68cbc3ccdb53c",
     "packaging/install.sh": "944e477d33498c109d4b4196ea987bbef05085c62474b88282ef7f5aacc1f1ee",
@@ -255,10 +503,10 @@
     "panel/ui/app/styles/tables.css": "bf39cdc661f964c886f0af7b2aee5d002e8242c41002d09c14bc5448543ba33c",
     "panel/ui/app/styles/theme-contract.css": "2242557192ad3ccf931f522efcf093a552634624cde1d340fe3828759eddda69",
     "panel/ui/app/styles/tokens.css": "a2ca76c80ea1df11fcd6260d1bb6fb97c73ccd6212e4559e4abaf54df9a1dde8",
-    "panel/ui/next-env.d.ts": "7b550dda9686c16f36a17bf9051d5dbf31e98555b30d114ac49fc49a1e712651",
+    "panel/ui/next-env.d.ts": "1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b",
     "panel/ui/next.config.mjs": "34889d49ad33fe1ed55b6af7195a3cf5371f52d0467cf0aea7333983d74ca000",
-    "panel/ui/package-lock.json": "d2f1d507fa7ba2cb8e9bae0ec69efb42414d5d1a1f9f36d3999cc35d6eadd9be",
-    "panel/ui/package.json": "b2b380406b206cf12ddc512ce6f412590bf2b062ce1b254e4f16a52f9216fb3d",
+    "panel/ui/package-lock.json": "68904dd057a183115e7a818644b0819f083544c4e57fd5412a54dc3a8406582b",
+    "panel/ui/package.json": "4d1b8f08f98a2fcbad3a88684ab1a277c413d0fe02c025f40a2cee350cfd9a66",
     "panel/ui/public/themes/default/theme.css": "ebfc0b5cf283201f9fb20b1515bba490ac5d26a7c9f0bb56b3fe616ab69cf5e3",
     "panel/ui/public/themes/default/theme.json": "972b83691be155929dc1a75555583ecd8665b9d15ab231bde3bf5d2ecd84633a",
     "panel/ui/scripts/sync-web.mjs": "0e87925851074f30e9a25d1f818abfd4443fa0baa896779a511ade0559c6c7fb",
@@ -321,229 +569,6 @@
     "tests/source_checkout_smoke.sh": "7d700d8c458af71cd91874c7b722226fbec1c238a959d375c903fec0996bb36d",
     "update.sh": "ca4db8a15c75f7a9c1d412765822af069971dcd20a9e456d9756e8c4cfee355b"
   },
-  "agent_binary_sha256": "bde30212d0b970466233e3e958ca04befb8f180c4fce0ce43828677f0cf48367",
-  "tests": {
-    "workspace": {
-      "passed": 548,
-      "failed": 0,
-      "ignored": 1
-    },
-    "alpine": {
-      "passed": 548,
-      "failed": 0,
-      "ignored": 1
-    },
-    "host-regressions": {
-      "passed": 13,
-      "failed": 0,
-      "ignored": 0
-    }
-  },
-  "checks": {
-    "debian_exit": 0,
-    "alpine_exit": 0,
-    "ui_exit": 0,
-    "pipeline_exit": 0
-  },
-  "runtime_lab": {
-    "cases": {
-      "benign_http_has_no_attack_alert": true,
-      "real_ssh_failures_detected": true,
-      "ssh_firewall_block_applied": true,
-      "blocked_source_cannot_reach_http": true,
-      "unblock_restores_connectivity": true,
-      "real_http_probes_detected": true,
-      "web_firewall_block_applied": true,
-      "web_block_stops_new_connections": true,
-      "suid_sgid_without_content_change": true,
-      "capability_without_content_change": true,
-      "cron_persistence": true,
-      "unauthorized_ssh_key_change": true,
-      "webshell_content": true,
-      "miner_identity_process": true,
-      "additional_uid_zero_account": true,
-      "no_unadvertised_destructive_remediation": true,
-      "rescan_confirms_fixture_cleanup": true,
-      "expired_block_cleanup_restores_connectivity": true,
-      "daemon_sigint_exits_successfully": true
-    },
-    "limitations": [
-      "The product blocks public-source IPs; it does not kill processes, remove payloads, or restore accounts.",
-      "Cleanup is performed by the lab harness against its own fixtures, then independently rescanned.",
-      "Container-only visibility: no host PID/network, Docker socket, host root mounts, auditd, or eBPF.",
-      "Brief credential reads and short-lived outbound connections are negative coverage probes, not guaranteed detections."
-    ],
-    "images_bytes": {
-      "runtime": 104347338,
-      "fixture": 161751800
-    },
-    "isolation": {
-      "internal_network": true,
-      "target": {
-        "Privileged": false,
-        "PidMode": "",
-        "NetworkMode": "internal lab network",
-        "Binds": null,
-        "PortBindings": {},
-        "CapAdd": [
-          "NET_ADMIN"
-        ]
-      }
-    },
-    "scans": {
-      "clean": {
-        "seconds": 0.204,
-        "rss_kb": 12412,
-        "collector_errors": [],
-        "rules": [],
-        "active_response_applied": 0,
-        "active_response_failed": 0
-      },
-      "external-ssh": {
-        "seconds": 0.283,
-        "rss_kb": 12412,
-        "collector_errors": [],
-        "rules": [
-          "SSH-003"
-        ],
-        "active_response_applied": 1,
-        "active_response_failed": 0
-      },
-      "external-web": {
-        "seconds": 0.294,
-        "rss_kb": 12616,
-        "collector_errors": [],
-        "rules": [
-          "WEB-001"
-        ],
-        "active_response_applied": 1,
-        "active_response_failed": 0
-      },
-      "internal-compromise": {
-        "seconds": 0.373,
-        "rss_kb": 12756,
-        "collector_errors": [],
-        "rules": [
-          "FILE-002",
-          "FILE-005",
-          "FILE-006",
-          "PERSIST-001",
-          "PERSIST-002",
-          "PROC-004",
-          "SSH-005",
-          "USER-002",
-          "WEB-001"
-        ],
-        "active_response_applied": 0,
-        "active_response_failed": 0
-      },
-      "telemetry-coverage-probes": {
-        "seconds": 0.336,
-        "rss_kb": 12796,
-        "collector_errors": [],
-        "rules": [
-          "FILE-002",
-          "FILE-005",
-          "FILE-006",
-          "PERSIST-001",
-          "PERSIST-002",
-          "PROC-004",
-          "SSH-005",
-          "USER-002",
-          "WEB-001"
-        ],
-        "active_response_applied": 0,
-        "active_response_failed": 0
-      },
-      "after-harness-cleanup": {
-        "seconds": 0.214,
-        "rss_kb": 12536,
-        "collector_errors": [],
-        "rules": [],
-        "active_response_applied": 0,
-        "active_response_failed": 0
-      }
-    },
-    "web_block": {
-      "backend": "iptables",
-      "blocked_at": "2026-10-02T11:15:04.724431293Z",
-      "expired": false,
-      "expires_at": "2026-10-02T11:15:34.724431293Z",
-      "finding_id": "lab fixture",
-      "firewall_present": true,
-      "ip": "lab fixture",
-      "reason": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=6 layer=high_confidence_web_exploit",
-      "rule_id": "WEB-001"
-    },
-    "automatic_payload_cleanup_supported": false,
-    "negative_coverage_probes": {
-      "brief_shadow_read_detected": false,
-      "brief_connect_event_count": 0,
-      "note": "No audit/eBPF source enabled; snapshots cannot reliably capture already completed activity."
-    },
-    "daemon_rss_kb": {
-      "min": 12568,
-      "max": 12644,
-      "samples": 15
-    },
-    "daemon_cpu_percent_one_core": 0.627,
-    "result": "passed",
-    "host_firewall_unchanged": true
-  },
-  "host_passive_check": {
-    "raw_event_count": 913,
-    "finding_count": 9,
-    "collector_errors": [],
-    "active_response_applied_count": 0,
-    "notification_attempt_count": 0,
-    "memory_rss_after_kb": 12292
-  },
-  "worker_smoke": {
-    "passed": 14,
-    "failed": 0,
-    "backend": "real Node SQLite adapter for Worker SQL; no live Cloudflare/D1 deployment"
-  },
-  "git_checkout_smoke": {
-    "scripts": [
-      "install.sh",
-      "update.sh"
-    ],
-    "cases_per_script": [
-      "switch cached origin",
-      "repeat selected repository",
-      "explicit override",
-      "fresh clone"
-    ],
-    "result": "passed"
-  },
-  "browser_smoke": {
-    "result": "passed",
-    "cases": [
-      "anonymous API hides management path",
-      "private API rejects anonymous request",
-      "public UI renders without horizontal overflow at 1440px",
-      "management UI requires token at 1440px",
-      "management login succeeds at 1440px",
-      "public UI renders without horizontal overflow at 390px",
-      "management UI requires token at 390px",
-      "management login succeeds at 390px",
-      "no uncaught browser JavaScript errors"
-    ],
-    "failed": 0,
-    "browser": "headless Chromium (Playwright 1.55.0)",
-    "backend": "real Rust panel with isolated SQLite, loopback only; empty fleet"
-  },
-  "github_actions": {
-    "verified": false,
-    "reason": "No pull-request workflow runs returned for tested feature head."
-  },
-  "merge_commit": "b43a7006b2eef9e458822d1825fed420b987e034",
-  "merged_tree_matches_tested_candidate": true,
-  "cleanup": {
-    "production_containers_unchanged": true,
-    "services_unchanged": true,
-    "ipv4_ipv6_firewall_unchanged": true,
-    "temporary_builders_removed": true
-  },
-  "scope_note": "Source hashes identify the tested merge tree before subsequent documentation-only updates. Candidate commit was a local preparation commit; the merged GitHub commit has the identical tree."
+  "ci_workflow_sha256": "96f9200ac8ba9bda1d96cdd772cdd92107c98082abe3f3fa62385e7f764b6ec3",
+  "scope_note": "Runtime source files match the hyvps-tested checkout. Documentation and CI metadata are tracked separately; the revised CI workflow was syntax checked and its audit commands exercised locally, but no cloud run was returned."
 }

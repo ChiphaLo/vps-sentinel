@@ -78,7 +78,7 @@ For notifications, optional panel upload, service operations and all install opt
 
 ## Verified results
 
-On **2026-10-02**, the merge candidate was tested on hyvps (Debian 13 x86_64), then its exact tree was verified against merged `main`:
+On **2026-10-02**, the merge candidate was tested on hyvps (Debian 13 x86_64), then its exact tree was verified against merged `main`. Dependency security updates at [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) received a further full validation:
 
 | Check | Result |
 | --- | --- |
@@ -88,7 +88,8 @@ On **2026-10-02**, the merge candidate was tested on hyvps (Debian 13 x86_64), t
 | Build and code checks | Locked release build, formatting and strict Clippy passed. |
 | Isolated runtime | Real SSH failures and HTTP probes detected and blocked; seven inert post-compromise fixture types detected. |
 | Installer and panel | Package install and source switching, contract generation, UI typecheck/build, 14 Worker/SQLite cases and 9 headless Rust-panel browser checks passed. |
-| Resource sample | Daemon RSS about 12.3 MiB and agent CPU about 0.63% of one core in a 15-second sample at a 5-second scan interval. |
+| Dependency audits | npm: 0 vulnerabilities; RustSec: 0 non-exempt vulnerabilities and no warnings, retaining the documented RSA exception. |
+| Resource sample | Daemon RSS about 12.3 MiB and agent CPU about 0.74% of one core in a 15-second sample at a 5-second scan interval. |
 
 These are dated on-host results, not a claim that current GitHub Actions is green. Resource usage depends on monitored scope and load; CPU excludes child processes. See the [validation report](docs/validation-2026-10-02.md) for methods, limits and reproduction.
 

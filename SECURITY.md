@@ -26,3 +26,5 @@ Out of scope:
 - password brute-force features;
 - third-party target scanning;
 - stealth or evasion features.
+
+Dependency audit policy: `.cargo/audit.toml` retains the existing `RUSTSEC-2023-0071` exception for the SQLx MySQL client’s transitive RSA dependency. [RustSec](https://rustsec.org/advisories/RUSTSEC-2023-0071.html) lists no patched version. Audits are reported with this exception explicitly disclosed; they are not a claim that every dependency is vulnerability-free.
