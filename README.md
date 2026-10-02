@@ -1,46 +1,46 @@
 # vps-sentinel · ChiphaLo fork
 
-Lightweight Rust intrusion-signal monitoring for Linux VPS hosts, with evidence-backed alerts, optional source-IP blocking, and a fleet dashboard.
+面向 Linux VPS 的轻量 Rust 入侵信号监控：提供证据与告警、可选来源 IP 封禁，以及多服务器安全面板。
 
-[中文说明](README.zh-CN.md) · [Deployment](docs/deployment.md) · [Validation report](docs/validation-2026-10-02.md) · [Security work / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [Upstream](https://github.com/cryptoli/vps-sentinel)
+[English](README.en.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-02.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
 
 [![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Fork and branch status
+## Fork 与分支状态
 
-This is a fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). Upstream provides the original agent and dashboard; this fork extends Linux security collection, state comparison, and isolated validation.
+本仓库 fork 自 [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel)。原作者提供 agent 和面板，本 fork 着重补充 Linux 安全数据采集、状态漂移检测和隔离实测。
 
-| Branch | Contents |
+| 分支 | 内容 |
 | --- | --- |
-| `main` | Upstream v0.3.1 plus this fork's tested security and reliability improvements. Recommended for installation. |
-| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | Development history, merged through [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1). |
+| `main` | 上游 v0.3.1 加本 fork 已验证的安全与可靠性改动，推荐安装此分支。 |
+| [`feat/security-coverage-phase1`](https://github.com/ChiphaLo/vps-sentinel/tree/feat/security-coverage-phase1) | 开发历史，已通过 [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 合并。 |
 
-[PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) was merged on 2026-10-02 at [`b43a700`](https://github.com/ChiphaLo/vps-sentinel/commit/b43a7006b2eef9e458822d1825fed420b987e034). The merged tree matches the candidate tested on hyvps. Install and update scripts now default to this fork and `main`; an explicit `REPO_URL` also updates the origin in a reused source directory.
+[PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) 已于 2026-10-02 合并，提交为 [`b43a700`](https://github.com/ChiphaLo/vps-sentinel/commit/b43a7006b2eef9e458822d1825fed420b987e034)。合并后的文件树与 hyvps 上实测的候选版本一致。安装与升级脚本现在默认选择此 fork 的 `main`；复用源码目录时，显式 `REPO_URL` 也会更新其 origin 地址。
 
-## What it monitors
+## 能监控什么
 
-| Area | Coverage |
+| 模块 | 覆盖范围 |
 | --- | --- |
-| SSH and accounts | Logins, repeated failures, success after brute force, SSH key changes, new users and UID 0 account drift. |
-| Files and persistence | Critical files, web content, cron, systemd and startup entries, plus baseline review and allowlists. |
-| Processes and network | Process ancestry, executable identity, known miner/scanner identities, listeners, outbound snapshots and Web probe logs. |
-| Docker and audit | Container configuration and audit log facts; expanded rules are included in `main`. |
-| Response and reporting | Optional nftables/iptables source-IP blocks, unblock/expiry maintenance, fingerprints and notification channels. |
-| Fleet dashboard | Optional self-hosted Rust or Cloudflare Worker/D1 panel, signed telemetry and privacy redaction. |
+| SSH 与账户 | 登录、连续失败、爆破后成功、SSH key 变化、新用户及 UID 0 账户漂移。 |
+| 文件与持久化 | 关键文件、Web 内容、cron、systemd、启动项，以及基线复核和白名单。 |
+| 进程与网络 | 父进程链、可执行文件身份、已知矿工/扫描器身份、监听端口、外连快照及 Web 探测日志。 |
+| Docker 与 audit | 容器配置和 audit 日志；扩展规则已包含在 `main`。 |
+| 响应与报告 | 可选 nftables/iptables 来源 IP 封禁、解封与到期维护、攻击指纹和通知渠道。 |
+| 多服务器面板 | 可选 Rust 自建或 Cloudflare Worker/D1 面板、签名上报和隐私脱敏。 |
 
-### Fork improvements
+### 本 fork 的改进
 
-- Inspect container risks: privileged mode, host namespaces, Docker socket and writable host-root mounts, dangerous capabilities including `ALL`.
-- Parse quoted and hex-encoded audit arguments; recognize credential-access, privilege-persistence, module-manipulation and logging-disable commands when audit execution telemetry exists.
-- Detect monitored-file SUID/SGID, ownership and Linux capability drift without requiring content changes (`FILE-005`, `FILE-006`). Read one bounded xattr on existing FIM paths; add no Rust dependencies or full-disk scan.
-- Expand FIM and persistence paths, retain SIGINT during collection, and exclude zombie/dead process snapshots from active process alerts.
-- Keep command collection bounded even when descendant processes retain stdout; honor repository overrides when reusing installer/update source caches.
-- Provide a small runtime Dockerfile and a reproducible isolated attack-response lab.
+- 检查 privileged、宿主命名空间、Docker socket、可写宿主根目录挂载，以及包含 `ALL` 的危险 capability。
+- 保留 audit 参数的引号与空格、解码十六进制 argv；有执行遥测时识别凭据读取、权限持久化、内核模块操作及禁用日志的命令。
+- 检测已监控文件的 SUID/SGID、所有者和 Linux capability 漂移，内容不变也能发现（`FILE-005`、`FILE-006`）。只在原 FIM 路径上读取一个有界 xattr，不增加 Rust 依赖，不做全盘扫描。
+- 扩展 FIM 和持久化路径，保留采集期间收到的 SIGINT，并避免把僵尸/已终止进程误报为活动进程。
+- 修复后代进程占住 stdout 时命令超时失效的问题，以及复用安装/升级源码目录时忽略新仓库地址的问题。
+- 提供小型运行镜像和可复现的隔离攻击响应实验。
 
-## Install this fork
+## 安装这个 fork
 
-The merged code is validated from source. Use `INSTALL_METHOD=source` to build the selected repository and branch; this fork has not published a release artifact for these changes.
+已合并的代码通过了源码构建验证。请使用 `INSTALL_METHOD=source` 构建指定仓库和分支；本 fork 尚未为这些改动发布 release 二进制。
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.sh | \
@@ -50,9 +50,9 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/install.
     ACTIVE_RESPONSE_PERMANENT_BLOCK_ENABLED="no" sh
 ```
 
-New installations in this example start with automatic IP blocking disabled. Run `sudo vs doctor`, inspect findings and trusted-admin allowlists, then enable response if appropriate. Existing configuration and local state are preserved; review them when reinstalling or switching repositories. Source builds need Rust and temporary build space; successful installs remove the build target directory by default.
+该示例让新安装的实例先关闭自动 IP 封禁。先运行 `sudo vs doctor`、查看告警及可信管理员白名单，再按实际需要启用响应。重装保留已有配置和本地状态，切换仓库或重装时应检查现有配置。源码构建需要 Rust 和临时构建空间；安装成功后默认删除 target 构建目录。
 
-Update from the same fork and branch:
+从同一个 fork、同一个分支升级：
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.sh | \
@@ -60,49 +60,49 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
     BRANCH="main" INSTALL_METHOD="source" sh
 ```
 
-For notifications, optional panel upload, service operations and all install options, see [agent deployment](docs/deployment.md). For the optional dashboard, see [panel deployment](docs/panel-deployment.md).
+通知渠道、可选面板上报、服务操作及完整参数见 [agent 部署教程](docs/deployment.zh-CN.md)，面板见 [面板部署教程](docs/panel-deployment.zh-CN.md)。
 
-## Local workflow
+## 常用本地操作
 
-| Command | Purpose |
+| 命令 | 用途 |
 | --- | --- |
-| `sudo vs doctor` | Check config, tools and collection visibility. |
-| `sudo vs check --json` | Inspect current facts without persistence, notifications or firewall response; it does not compare a stored baseline. |
-| `sudo vs scan --no-notify --json` | Persist a scan and compare the baseline, without notification or active response. |
-| `sudo vs baseline create` | Establish a baseline after reviewing and trusting the current state. |
-| `sudo vs baseline diff` | Review host changes against the stored baseline. |
-| `sudo vs blocks list` / `sudo vs blocks why <ip> --json` | Inspect recorded blocks and their actual expiry. |
-| `sudo vs blocks unblock <ip>` / `sudo vs blocks cleanup` | Remove a block or maintain expired/stale block state. |
-| `sudo vs config validate` / `sudo vs reload` | Validate configuration and reload the service. |
-| `sudo vs menu` | Guided local configuration and review. |
+| `sudo vs doctor` | 检查配置、工具和采集可见性。 |
+| `sudo vs check --json` | 查看当前事实，不持久化、不通知、不封禁；不对比已保存基线。 |
+| `sudo vs scan --no-notify --json` | 保存扫描并比较基线，不通知、不执行主动响应。 |
+| `sudo vs baseline create` | 确认当前状态可信后建立基线。 |
+| `sudo vs baseline diff` | 复核相对基线的变化。 |
+| `sudo vs blocks list` / `sudo vs blocks why <ip> --json` | 查看封禁及实际到期时间。 |
+| `sudo vs blocks unblock <ip>` / `sudo vs blocks cleanup` | 解封或维护过期、失效封禁状态。 |
+| `sudo vs config validate` / `sudo vs reload` | 校验配置并重载服务。 |
+| `sudo vs menu` | 本地引导式配置与复核。 |
 
-## Verified results
+## 已验证的结果
 
-On **2026-10-02**, the merge candidate was tested on hyvps (Debian 13 x86_64), then its exact tree was verified against merged `main`. Dependency security updates at [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) received a further full validation:
+**2026-10-02** 在 hyvps（Debian 13 x86_64）验证合并候选版本，并核对合并文件树一致；之后的依赖安全更新 [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) 另行完成了完整验证：
 
-| Check | Result |
+| 检查 | 结果 |
 | --- | --- |
-| Debian/bookworm workspace | 548 passed, 0 failed; one Docker-socket test handled separately on the host. |
-| Alpine/musl workspace | 548 passed, 0 failed; the same host-only test skipped. |
-| Explicit host suite | 13 passed, including the Docker-socket test. |
-| Build and code checks | Locked release build, formatting and strict Clippy passed. |
-| Isolated runtime | Real SSH failures and HTTP probes detected and blocked; seven inert post-compromise fixture types detected. |
-| Installer and panel | Package install and source switching, contract generation, UI typecheck/build, 14 Worker/SQLite cases and 9 headless Rust-panel browser checks passed. |
-| Dependency audits | npm: 0 vulnerabilities; RustSec: 0 non-exempt vulnerabilities and no warnings, retaining the documented RSA exception. |
-| Resource sample | Daemon RSS about 12.3 MiB and agent CPU about 0.74% of one core in a 15-second sample at a 5-second scan interval. |
+| Debian/bookworm workspace | 548 项通过、0 失败；需要 Docker socket 的 1 项在宿主单独执行。 |
+| Alpine/musl workspace | 548 项通过、0 失败；同一项宿主专用测试跳过。 |
+| 宿主专项 | 13 项全部通过，包含 Docker socket 测试。 |
+| 构建与代码检查 | locked release、格式检查、严格 Clippy 通过。 |
+| 隔离运行 | 真实 SSH 失败和 HTTP 探测被识别、封禁；七类惰性入侵后样本被识别。 |
+| 安装与面板 | 安装包与源码仓库切换、共享契约、UI 类型检查/构建、14 项 Worker/SQLite 校验及 9 项 Rust 面板无头浏览器检查通过。 |
+| 依赖审计 | npm 0 项；RustSec 无非豁免漏洞和警告，保留报告中已说明的 RSA 例外。 |
+| 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.74%。 |
 
-These are dated on-host results, not a claim that current GitHub Actions is green. Resource usage depends on monitored scope and load; CPU excludes child processes. See the [validation report](docs/validation-2026-10-02.md) for methods, limits and reproduction.
+这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-02.md)。
 
-## Detection and response limits
+## 检测与处置边界
 
-Active response blocks source IPs. It does not kill processes, delete backdoors or restore accounts. The lab harness cleans its own inert fixtures and then runs an independent rescan; that is not automatic payload removal by the product.
+主动响应封禁来源 IP，不会自动杀进程、删除后门或恢复账户。实验脚本只清理自己的惰性样本，再独立复扫；不能把这个步骤当成产品自动清除入侵。
 
-Audit rules need configured audit telemetry. The built-in runtime probe is optional, and completed short-lived activity can escape snapshots: brief credential reads and outbound connections were not captured in the lab without audit/eBPF data. This fork does not claim complete EDR coverage, package-content integrity verification or rootkit removal. Permission/capability comparison applies only to monitored files and requires a trusted baseline containing those fields.
+audit 规则需要配置真实 audit 遥测。内置运行探针是可选组件，已经结束的瞬时活动可能躲过轮询快照：没有 audit/eBPF 数据源的实验未捕获短暂凭据读取和短暂外连。本 fork 不宣称具备完整 EDR 覆盖、软件包内容完整性验证或 rootkit 清除。权限/capability 比较只覆盖配置的监控文件，且需要包含对应字段的可信基线。
 
-A normally isolated container observes itself, not the host. The runtime image and lab do not imply host monitoring without an explicit visibility/deployment design.
+普通隔离容器只观察自身，不会自动监控宿主。运行镜像和实验不是宿主监控部署方案的替代。
 
-## Privacy, contributing and upstream
+## 隐私、贡献与上游
 
-Local SQLite storage is the default; panel upload and notification channels require configuration. Signed panel telemetry redacts raw evidence, paths, commands and server identifiers. Confirmed attacker IPs may appear on the public blocklist. The panel is not a remote SSH/command plane; privileged operations remain local.
+默认使用本地 SQLite；面板上报和通知渠道需要配置。签名遥测对原始证据、路径、命令和服务器标识做脱敏；确认的攻击来源 IP 可以出现在公开黑名单中。面板不提供远程 SSH 或命令控制，特权操作保留在节点本地。
 
-Keep secrets in local config or deployment secret stores. [Contributing](CONTRIBUTING.md) covers development and rule expectations; [SECURITY.md](SECURITY.md) covers private reporting. Original attribution is preserved under the [MIT license](LICENSE); see [license notes](docs/open-source-license.md).
+凭据存放在本地配置或部署 secret 中。[贡献说明](CONTRIBUTING.md) 提供开发和规则要求，[安全反馈](SECURITY.md) 说明私下报告方式。保留原作者署名和 [MIT 许可证](LICENSE)，见 [许可证说明](docs/open-source-license.md)。

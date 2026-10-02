@@ -65,7 +65,7 @@ jobs:
           cp install.sh update.sh stop.sh "${package_dir}/"
           cp scripts/create-panel-env.sh scripts/deploy-cloudflare-panel.sh "${package_dir}/scripts/"
           cp rust-toolchain.toml "${package_dir}/"
-          cp README.md README.zh-CN.md LICENSE CHANGELOG.md SECURITY.md "${package_dir}/"
+          cp README.md README.en.md README.zh-CN.md LICENSE CHANGELOG.md SECURITY.md "${package_dir}/"
           cp packaging/systemd/vps-sentinel.service "${package_dir}/packaging/systemd/"
           chmod 0755 "${package_dir}/vps-sentinel" "${package_dir}/vps-sentinel-panel" "${package_dir}"/*.sh "${package_dir}/scripts"/*.sh
           tar -czf "dist/vps-sentinel-${target}.tar.gz" -C "${package_dir}" .

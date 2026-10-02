@@ -17,6 +17,7 @@ cargo build --release --locked
 - `update.sh`
 - `packaging/systemd/vps-sentinel.service`
 - `README.md`
+- `README.en.md`
 - `README.zh-CN.md`
 - `LICENSE`
 

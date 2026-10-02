@@ -1,6 +1,6 @@
 # Agent Deployment
 
-> **Fork deployment:** These examples build `ChiphaLo/vps-sentinel:main` from source. Security and reliability changes are merged. Scripts default to this fork and `main`; the examples still pin `REPO_URL`, `BRANCH` and `INSTALL_METHOD` explicitly. No fork release artifact has been published for these changes. See [fork status](../README.md#fork-and-branch-status) and the [dated validation report](validation-2026-10-02.md).
+> **Fork deployment:** These examples build `ChiphaLo/vps-sentinel:main` from source. Security and reliability changes are merged. Scripts default to this fork and `main`; the examples still pin `REPO_URL`, `BRANCH` and `INSTALL_METHOD` explicitly. No fork release artifact has been published for these changes. See [fork status](../README.en.md#fork-and-branch-status) and the [dated validation report](validation-2026-10-02.md).
 
 This guide covers installing and operating the `vps-sentinel` agent on Linux VPS hosts. For fleet panel deployment, see [panel-deployment.md](panel-deployment.md).
 

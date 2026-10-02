@@ -93,4 +93,4 @@ The lab writes scan JSON, case outcomes, response evidence, metrics and cleanup 
 
 请仅在可丢弃的 Linux 实验宿主运行，复现时固定上述提交。保留输出结果，单独记录 Docker socket 专项，不把跳过算作通过。
 
-[English README](../README.md) · [中文首页](../README.zh-CN.md) · [Deployment](deployment.md)
+[English README](../README.en.md) · [中文首页](../README.md) · [Deployment](deployment.md)

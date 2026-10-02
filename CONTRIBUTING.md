@@ -1,6 +1,6 @@
 # Contributing
 
-This repository is the ChiphaLo fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). See the [README](README.md#fork-and-branch-status) before choosing a target branch. Changes target `main`; security improvements from PR #1 are merged.
+This repository is the ChiphaLo fork of [cryptoli/vps-sentinel](https://github.com/cryptoli/vps-sentinel). See the [README](README.en.md#fork-and-branch-status) before choosing a target branch. Changes target `main`; security improvements from PR #1 are merged.
 
 ## Development
 
