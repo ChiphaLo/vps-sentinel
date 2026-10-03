@@ -8,7 +8,7 @@ Open a private GitHub security advisory if available. If that is not possible, o
 
 For this fork, identify the branch and commit from [ChiphaLo/vps-sentinel](https://github.com/ChiphaLo/vps-sentinel). Do not include SSH credentials, notification tokens, panel secrets or unredacted host evidence in a public issue. Do not assume private advisory reporting is enabled on a fork. Coordinate upstream issues with the original project through its own reporting policy.
 
-The [dated validation report](docs/validation-2026-10-02.md) states what was tested. Detection depends on collection visibility and trusted baselines; active response blocks source IPs and does not remove payloads or restore a compromised host.
+The [dated validation report](docs/validation-2026-10-03.md) states what was tested. Detection depends on collection visibility and trusted baselines; active response blocks source IPs and does not remove payloads or restore a compromised host.
 
 ## Scope
 

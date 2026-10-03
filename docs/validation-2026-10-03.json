@@ -1,0 +1,932 @@
+{
+  "date": "2026-10-03",
+  "timezone": "Asia/Hong_Kong",
+  "environment": {
+    "host": "hyvps 154.88.64.73",
+    "os": "Debian 13.7 x86_64",
+    "kernel": "6.12.107+deb13-cloud-amd64",
+    "docker": "26.1.5+dfsg1 (overlay2, no /etc/docker/daemon.json)",
+    "iptables": "1.8.11 (nf_tables)",
+    "build_container": "rust:1-bookworm"
+  },
+  "tested_commit": "26941c29131feff5957590c52d8137383518268a",
+  "tested_tree": "1ed39d586640f2d009744d9c799495928f03d540",
+  "tested_branch": "main",
+  "source_archive_sha256": "be523319691b3ff843601a41a608e5e8f5685d35bac9454398f45e27691fb760",
+  "binary": {
+    "version": "vps-sentinel 0.3.1",
+    "bytes": 20264704,
+    "sha256": "afdd0ed552d5759985c8bcc333d420fecd0ee3ce1cb65774f34fcb757f37e561",
+    "path": "/root/sentinel-lab-20261003/work/vps-sentinel"
+  },
+  "build_and_workspace": {
+    "steps_run": [
+      "cargo build --release --locked",
+      "binary info",
+      "cargo fmt --check",
+      "cargo clippy --workspace --all-targets -- -D warnings",
+      "cargo test --workspace --locked",
+      "ALL_STEPS_FINISHED"
+    ],
+    "fmt_check": "passed",
+    "clippy_strict": "cargo clippy --workspace --all-targets --locked -- -D warnings passed",
+    "release_build": "cargo build --locked --release passed",
+    "workspace_tests": {
+      "binaries": 11,
+      "passed": 548,
+      "failed": 0,
+      "ignored": 1
+    },
+    "git_archive_tree_matches_head": true
+  },
+  "container_lab": {
+    "cases": {
+      "benign_http_has_no_attack_alert": true,
+      "real_ssh_failures_detected": true,
+      "ssh_firewall_block_applied": true,
+      "blocked_source_cannot_reach_http": true,
+      "unblock_restores_connectivity": true,
+      "real_http_probes_detected": true,
+      "web_firewall_block_applied": true,
+      "web_block_stops_new_connections": true,
+      "suid_sgid_without_content_change": true,
+      "capability_without_content_change": true,
+      "cron_persistence": true,
+      "unauthorized_ssh_key_change": true,
+      "webshell_content": true,
+      "miner_identity_process": true,
+      "additional_uid_zero_account": true,
+      "no_unadvertised_destructive_remediation": true,
+      "rescan_confirms_fixture_cleanup": true,
+      "expired_block_cleanup_restores_connectivity": true,
+      "daemon_sigint_exits_successfully": true
+    },
+    "limitations": [
+      "The product blocks public-source IPs; it does not kill processes, remove payloads, or restore accounts.",
+      "Cleanup is performed by the lab harness against its own fixtures, then independently rescanned.",
+      "Container-only visibility: no host PID/network, Docker socket, host root mounts, auditd, or eBPF.",
+      "Brief credential reads and short-lived outbound connections are negative coverage probes, not guaranteed detections."
+    ],
+    "images_bytes": {
+      "runtime": 104345090,
+      "fixture": 161749548
+    },
+    "isolation": {
+      "internal_network": true,
+      "target": {
+        "Privileged": false,
+        "PidMode": "",
+        "NetworkMode": "sentinel-lab-1d67c274",
+        "Binds": null,
+        "PortBindings": {},
+        "CapAdd": [
+          "NET_ADMIN"
+        ]
+      }
+    },
+    "scans": {
+      "clean": {
+        "seconds": 0.196,
+        "rss_kb": 12348,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "external-ssh": {
+        "seconds": 0.295,
+        "rss_kb": 12596,
+        "collector_errors": [],
+        "rules": [
+          "SSH-003"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "external-web": {
+        "seconds": 0.28,
+        "rss_kb": 12604,
+        "collector_errors": [],
+        "rules": [
+          "WEB-001"
+        ],
+        "active_response_applied": 1,
+        "active_response_failed": 0
+      },
+      "internal-compromise": {
+        "seconds": 0.387,
+        "rss_kb": 12832,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "telemetry-coverage-probes": {
+        "seconds": 0.338,
+        "rss_kb": 12616,
+        "collector_errors": [],
+        "rules": [
+          "FILE-002",
+          "FILE-005",
+          "FILE-006",
+          "PERSIST-001",
+          "PERSIST-002",
+          "PROC-004",
+          "SSH-005",
+          "USER-002",
+          "WEB-001"
+        ],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      },
+      "after-harness-cleanup": {
+        "seconds": 0.189,
+        "rss_kb": 12408,
+        "collector_errors": [],
+        "rules": [],
+        "active_response_applied": 0,
+        "active_response_failed": 0
+      }
+    },
+    "web_block": {
+      "backend": "iptables",
+      "blocked_at": "2026-10-03T12:31:02.416448791Z",
+      "expired": false,
+      "expires_at": "2026-10-03T12:31:32.416448791Z",
+      "finding_id": "f3f37f64-570c-438c-97cb-8d60057169f5",
+      "firewall_present": true,
+      "ip": "11.254.253.3",
+      "reason": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=6 layer=high_confidence_web_exploit",
+      "rule_id": "WEB-001"
+    },
+    "automatic_payload_cleanup_supported": false,
+    "negative_coverage_probes": {
+      "brief_shadow_read_detected": false,
+      "brief_connect_event_count": 0,
+      "note": "No audit/eBPF source enabled; snapshots cannot reliably capture already completed activity."
+    },
+    "daemon_rss_kb": {
+      "min": 12624,
+      "max": 12704,
+      "samples": 15
+    },
+    "daemon_cpu_percent_one_core": 0.737,
+    "result": "passed",
+    "host_firewall_unchanged": true
+  },
+  "extended_probes": {
+    "script": "tests/container_lab/extended_probes.py",
+    "published_port": {
+      "gateway": "172.30.0.1",
+      "port": 18480
+    },
+    "host_docker_path": {
+      "nat_rules": [
+        "-A POSTROUTING -s 172.30.0.0/16 ! -o br-3d0b0f501a61 -j MASQUERADE",
+        "-A POSTROUTING -s 172.25.0.0/16 ! -o br-0979b60abf8c -j MASQUERADE",
+        "-A POSTROUTING -s 172.31.250.0/24 ! -o br-651679e52a2f -j MASQUERADE",
+        "-A POSTROUTING -s 172.17.0.0/16 ! -o docker0 -j MASQUERADE",
+        "-A POSTROUTING -s 172.31.250.2/32 -d 172.31.250.2/32 -p tcp -m tcp --dport 3000 -j MASQUERADE",
+        "-A POSTROUTING -s 172.25.0.2/32 -d 172.25.0.2/32 -p tcp -m tcp --dport 5244 -j MASQUERADE",
+        "-A POSTROUTING -s 172.30.0.2/32 -d 172.30.0.2/32 -p tcp -m tcp --dport 8080 -j MASQUERADE",
+        "-A DOCKER -d 172.30.0.1/32 ! -i br-3d0b0f501a61 -p tcp -m tcp --dport 18480 -j DNAT --to-destination 172.30.0.2:8080"
+      ],
+      "forward_chain": [
+        "-P FORWARD DROP",
+        "-A FORWARD -j DOCKER-USER",
+        "-A FORWARD -j DOCKER-ISOLATION-STAGE-1",
+        "-A FORWARD -o br-3d0b0f501a61 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
+        "-A FORWARD -o br-3d0b0f501a61 -j DOCKER",
+        "-A FORWARD -i br-3d0b0f501a61 ! -o br-3d0b0f501a61 -j ACCEPT"
+      ]
+    },
+    "hairpin": {
+      "client_address_in_access_log": "172.30.0.1 - - [03/Oct/2026 12:32:46] \"GET / HTTP/1.1\" 200 -",
+      "finding": [
+        {
+          "rule_id": "WEB-001",
+          "subject": "172.30.0.1",
+          "severity": "Low"
+        }
+      ],
+      "blocks": "no active-response blocks recorded",
+      "peer_reachable_after_scan": "200"
+    },
+    "external_shaped_source": {
+      "source_ip": "11.254.253.3",
+      "client_address_in_access_log": "11.254.253.3 - - [03/Oct/2026 12:32:48] \"GET / HTTP/1.1\" 200 -",
+      "finding": [
+        {
+          "rule_id": "WEB-001",
+          "subject": "11.254.253.3",
+          "severity": "Low"
+        }
+      ],
+      "blocks": "11.254.253.3 backend=iptables firewall=not_checked expires_at=2026-10-03T12:33:19.822943093+00:00 rule=WEB-001 reason=web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=9 layer=high_confidence_web_exploit",
+      "block_record": {
+        "block": {
+          "backend": "iptables",
+          "blocked_at": "2026-10-03T12:32:49.822943093Z",
+          "expired": false,
+          "expires_at": "2026-10-03T12:33:19.822943093Z",
+          "finding_id": "d17c022e-5301-405d-9737-b724122958e7",
+          "firewall_present": null,
+          "ip": "11.254.253.3",
+          "reason": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=9 layer=high_confidence_web_exploit",
+          "rule_id": "WEB-001"
+        },
+        "finding": {
+          "category": "Web",
+          "confidence": "low",
+          "dedup_key": "979c6895917cb200506097685a918dbd13109fd696b0a22d6237f7c1bfadaaa4",
+          "description": "Web requests match a known probing family. Similar paths from the same source are aggregated to reduce alert noise.",
+          "evidence": [
+            {
+              "key": "source_ip",
+              "value": "11.254.253.3"
+            },
+            {
+              "key": "probe_family",
+              "value": "phpunit_eval_stdin"
+            },
+            {
+              "key": "probe_families",
+              "value": "env_file, git_exposure, phpunit_eval_stdin"
+            },
+            {
+              "key": "response_profile",
+              "value": "missing_or_rejected"
+            },
+            {
+              "key": "response_profiles",
+              "value": "missing_or_rejected"
+            },
+            {
+              "key": "request_count",
+              "value": "9"
+            },
+            {
+              "key": "methods",
+              "value": "GET"
+            },
+            {
+              "key": "statuses",
+              "value": "404"
+            },
+            {
+              "key": "sample_paths",
+              "value": "/.env, /.git/config, /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php"
+            },
+            {
+              "key": "log_sources",
+              "value": "/var/log/lab-access.log"
+            },
+            {
+              "key": "evidence_score",
+              "value": "34"
+            },
+            {
+              "key": "evidence_strengths",
+              "value": "request_count, source_ip"
+            },
+            {
+              "key": "unified_risk_score",
+              "value": "35"
+            },
+            {
+              "key": "unified_risk_level",
+              "value": "low"
+            },
+            {
+              "key": "unified_risk_features",
+              "value": "confidence:low, evidence_score, severity:low"
+            },
+            {
+              "key": "attack_fingerprint_id",
+              "value": "WEB-FP-6aedd7f24fab"
+            },
+            {
+              "key": "attack_fingerprint_kind",
+              "value": "web_probe"
+            },
+            {
+              "key": "attack_fingerprint_score",
+              "value": "65"
+            },
+            {
+              "key": "attack_fingerprint_seen_count",
+              "value": "2"
+            },
+            {
+              "key": "attack_fingerprint_source_ip_count",
+              "value": "2"
+            },
+            {
+              "key": "active_response_status",
+              "value": "blocked"
+            },
+            {
+              "key": "active_response_ip",
+              "value": "11.254.253.3"
+            },
+            {
+              "key": "active_response_reason",
+              "value": "web probe family=phpunit_eval_stdin response=missing_or_rejected request_count=9 layer=high_confidence_web_exploit"
+            },
+            {
+              "key": "active_response_backend",
+              "value": "iptables"
+            },
+            {
+              "key": "active_response_expires_at",
+              "value": "2026-10-03 12:33:19 +00:00"
+            }
+          ],
+          "host_id": "c6a9747f4720",
+          "id": "d17c022e-5301-405d-9737-b724122958e7",
+          "impact": [],
+          "recommendations": [
+            "Review whether any probe path returned a successful or protected response.",
+            "Correlate with file changes and process anomalies around the same time."
+          ],
+          "rule_id": "WEB-001",
+          "severity": "Low",
+          "subject": "11.254.253.3",
+          "timestamp": "2026-10-03T12:32:49.756614258Z",
+          "title": "Web vulnerability probing detected"
+        },
+        "rule": {
+          "category": "web",
+          "default_severity": "Medium",
+          "description": "Web logs contain paths commonly used by automated vulnerability scanners.",
+          "id": "WEB-001",
+          "title": "Web vulnerability probing detected"
+        }
+      },
+      "published_port_after_block": "blocked",
+      "direct_container_after_block": "200",
+      "published_port_after_unblock": "200"
+    },
+    "fixtures": {
+      "fifo_in_monitored_path": {
+        "note": "FIFO inside a monitored directory; reading it must never block a scan.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12588 SECONDS=0.31",
+          "wall_seconds": 0.38,
+          "rss_kb": 12732,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "symlink_loop_in_monitored_path": {
+        "note": "Self-referential symlink; recursion must terminate.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12468 SECONDS=0.31",
+          "wall_seconds": 0.38,
+          "rss_kb": 12616,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "large_file_in_monitored_path": {
+        "note": "512 MiB file under a monitored path: scan time and peak RSS are recorded.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12584 SECONDS=3.58",
+          "wall_seconds": 3.675,
+          "rss_kb": 12776,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "unreadable_file_in_monitored_path": {
+        "note": "Unreadable file must be reported as a collector condition, not crash the scan.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12456 SECONDS=10.25",
+          "wall_seconds": 10.321,
+          "rss_kb": 12712,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "ld_so_preload_entry": {
+        "note": "Rootkit-style ld.so.preload entry, expected ROOTKIT-003 / PERSIST-003.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "ROOTKIT-003",
+            "subject": "/etc/ld.so.preload",
+            "severity": "High"
+          },
+          {
+            "rule_id": "PERSIST-003",
+            "subject": "/etc/ld.so.preload",
+            "severity": "High"
+          },
+          {
+            "rule_id": "TIMELINE-001",
+            "subject": "/etc/ld.so.preload",
+            "severity": "High"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12572 SECONDS=0.31",
+          "wall_seconds": 0.385,
+          "rss_kb": 12756,
+          "collector_errors": [],
+          "rules": [
+            "PERSIST-003",
+            "ROOTKIT-003",
+            "TIMELINE-001",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "shell_profile_reverse_shell_line": {
+        "note": "Reverse-shell line in a shell profile; inert text, never executed.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "PERSIST-002",
+            "subject": "/root/.bashrc",
+            "severity": "High"
+          },
+          {
+            "rule_id": "PERSIST-001",
+            "subject": "/root/.bashrc",
+            "severity": "Medium"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12592 SECONDS=0.31",
+          "wall_seconds": 0.384,
+          "rss_kb": 12760,
+          "collector_errors": [],
+          "rules": [
+            "PERSIST-001",
+            "PERSIST-002",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "systemd_unit_persistence": {
+        "note": "Systemd unit drop for a payload that is never started.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "PERSIST-002",
+            "subject": "/etc/systemd/system/parasite-update.service",
+            "severity": "High"
+          },
+          {
+            "rule_id": "PERSIST-001",
+            "subject": "/etc/systemd/system/parasite-update.service",
+            "severity": "Medium"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12468 SECONDS=0.31",
+          "wall_seconds": 0.389,
+          "rss_kb": 12664,
+          "collector_errors": [],
+          "rules": [
+            "PERSIST-001",
+            "PERSIST-002",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "cron_spool_root_entry": {
+        "note": "Cron spool persistence, the classic crontab -e backdoor path.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "PERSIST-002",
+            "subject": "/var/spool/cron/crontabs/root",
+            "severity": "High"
+          },
+          {
+            "rule_id": "PERSIST-001",
+            "subject": "/var/spool/cron/crontabs/root",
+            "severity": "Medium"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12464 SECONDS=0.31",
+          "wall_seconds": 0.388,
+          "rss_kb": 12716,
+          "collector_errors": [],
+          "rules": [
+            "PERSIST-001",
+            "PERSIST-002",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "known_miner_process_name": {
+        "note": "Process named after the Kinsing miner family, running from /tmp; it only sleeps.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "PROC-004",
+            "subject": "/tmp/kinsing",
+            "severity": "Critical"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12480 SECONDS=0.31",
+          "wall_seconds": 0.408,
+          "rss_kb": 12800,
+          "collector_errors": [],
+          "rules": [
+            "PROC-004",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "dropped_parasite_payload": {
+        "note": "Dropped payload plus miner config in /tmp, never executed.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12528 SECONDS=0.31",
+          "wall_seconds": 0.386,
+          "rss_kb": 12812,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "sshd_config_weakened": {
+        "note": "SSH backdoor config: direct root login and password auth enabled.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "CONFIG-004",
+            "subject": "/etc/ssh/sshd_config",
+            "severity": "High"
+          },
+          {
+            "rule_id": "CONFIG-001",
+            "subject": "/etc/ssh/sshd_config",
+            "severity": "Medium"
+          },
+          {
+            "rule_id": "FILE-001",
+            "subject": "/etc/ssh/sshd_config",
+            "severity": "Medium"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12572 SECONDS=0.31",
+          "wall_seconds": 0.394,
+          "rss_kb": 12844,
+          "collector_errors": [],
+          "rules": [
+            "CONFIG-001",
+            "CONFIG-004",
+            "FILE-001",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "auth_log_truncated": {
+        "note": "Anti-forensics: sensitive log truncated in place, expected TAMPER-002.",
+        "applied": true,
+        "detections": [
+          {
+            "rule_id": "TAMPER-002",
+            "subject": "/var/log/auth.log",
+            "severity": "High"
+          }
+        ],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12492 SECONDS=0.31",
+          "wall_seconds": 0.381,
+          "rss_kb": 12712,
+          "collector_errors": [],
+          "rules": [
+            "TAMPER-002",
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      }
+    },
+    "hostile_filesystem": {
+      "fifo_in_monitored_path": {
+        "note": "FIFO inside a monitored directory; reading it must never block a scan.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12588 SECONDS=0.31",
+          "wall_seconds": 0.38,
+          "rss_kb": 12732,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "symlink_loop_in_monitored_path": {
+        "note": "Self-referential symlink; recursion must terminate.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12468 SECONDS=0.31",
+          "wall_seconds": 0.38,
+          "rss_kb": 12616,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "large_file_in_monitored_path": {
+        "note": "512 MiB file under a monitored path: scan time and peak RSS are recorded.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12584 SECONDS=3.58",
+          "wall_seconds": 3.675,
+          "rss_kb": 12776,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      },
+      "unreadable_file_in_monitored_path": {
+        "note": "Unreadable file must be reported as a collector condition, not crash the scan.",
+        "applied": true,
+        "detections": [],
+        "scan": {
+          "marker": "SCAN_EXIT=0 PEAK_RSS_KB=12456 SECONDS=10.25",
+          "wall_seconds": 10.321,
+          "rss_kb": 12712,
+          "collector_errors": [],
+          "rules": [
+            "WEB-001"
+          ],
+          "active_response_applied": 0,
+          "active_response_failed": 0
+        },
+        "cleaned": true
+      }
+    },
+    "after_cleanup": {
+      "leftovers": [],
+      "blocks": "no active-response blocks recorded",
+      "host_firewall_unchanged": true,
+      "host_routes_unchanged": true,
+      "host_addrs_unchanged": true
+    }
+  },
+  "io_jitter_retest": {
+    "runs": [
+      {
+        "label": "01-control",
+        "wall_seconds": 0.39,
+        "stages_ms": {
+          "active_response": 0,
+          "attack_fingerprints": 0,
+          "baseline_diff": 0,
+          "collectors": 48,
+          "detectors": 133,
+          "duplicate_suppression": 0,
+          "event_enrichment": 4,
+          "finding_enrichment": 0,
+          "incident_correlation": 0,
+          "maintenance": 1,
+          "memory_metrics": 0,
+          "notifications": 0,
+          "panel_publish": 0,
+          "pre_publish_total": 203,
+          "raw_event_budget": 0,
+          "setup": 0,
+          "storage_persist": 13,
+          "suppress_rules": 0,
+          "timeline": 0,
+          "total": 203
+        },
+        "rss_kb": 12304,
+        "collector_errors": []
+      },
+      {
+        "label": "02-after-create",
+        "wall_seconds": 0.598,
+        "stages_ms": {
+          "active_response": 0,
+          "attack_fingerprints": 0,
+          "baseline_diff": 1,
+          "collectors": 52,
+          "detectors": 132,
+          "duplicate_suppression": 0,
+          "event_enrichment": 265,
+          "finding_enrichment": 0,
+          "incident_correlation": 0,
+          "maintenance": 2,
+          "memory_metrics": 0,
+          "notifications": 0,
+          "panel_publish": 0,
+          "pre_publish_total": 472,
+          "raw_event_budget": 0,
+          "setup": 1,
+          "storage_persist": 14,
+          "suppress_rules": 0,
+          "timeline": 0,
+          "total": 472
+        },
+        "rss_kb": 12476,
+        "collector_errors": []
+      },
+      {
+        "label": "03-after-remove",
+        "wall_seconds": 10.518,
+        "stages_ms": {
+          "active_response": 0,
+          "attack_fingerprints": 0,
+          "baseline_diff": 0,
+          "collectors": 55,
+          "detectors": 8301,
+          "duplicate_suppression": 0,
+          "event_enrichment": 1983,
+          "finding_enrichment": 0,
+          "incident_correlation": 0,
+          "maintenance": 1,
+          "memory_metrics": 0,
+          "notifications": 0,
+          "panel_publish": 0,
+          "pre_publish_total": 10362,
+          "raw_event_budget": 0,
+          "setup": 1,
+          "storage_persist": 17,
+          "suppress_rules": 0,
+          "timeline": 0,
+          "total": 10362
+        },
+        "rss_kb": 12368,
+        "collector_errors": []
+      },
+      {
+        "label": "04-after-10s",
+        "wall_seconds": 0.423,
+        "stages_ms": {
+          "active_response": 0,
+          "attack_fingerprints": 0,
+          "baseline_diff": 0,
+          "collectors": 50,
+          "detectors": 134,
+          "duplicate_suppression": 0,
+          "event_enrichment": 4,
+          "finding_enrichment": 0,
+          "incident_correlation": 0,
+          "maintenance": 1,
+          "memory_metrics": 0,
+          "notifications": 0,
+          "panel_publish": 0,
+          "pre_publish_total": 205,
+          "raw_event_budget": 0,
+          "setup": 0,
+          "storage_persist": 12,
+          "suppress_rules": 0,
+          "timeline": 0,
+          "total": 205
+        },
+        "rss_kb": 12456,
+        "collector_errors": []
+      },
+      {
+        "label": "05-after-30s",
+        "wall_seconds": 0.407,
+        "stages_ms": {
+          "active_response": 0,
+          "attack_fingerprints": 0,
+          "baseline_diff": 0,
+          "collectors": 50,
+          "detectors": 133,
+          "duplicate_suppression": 0,
+          "event_enrichment": 5,
+          "finding_enrichment": 0,
+          "incident_correlation": 0,
+          "maintenance": 1,
+          "memory_metrics": 0,
+          "notifications": 0,
+          "panel_publish": 0,
+          "pre_publish_total": 206,
+          "raw_event_budget": 0,
+          "setup": 0,
+          "storage_persist": 13,
+          "suppress_rules": 0,
+          "timeline": 0,
+          "total": 207
+        },
+        "rss_kb": 12432,
+        "collector_errors": []
+      }
+    ],
+    "result": "completed"
+  },
+  "default_config_findings": {
+    "file_integrity_paths_include_web_roots": false,
+    "web_roots_default": [
+      "/var/www",
+      "/srv",
+      "/usr/share/nginx/html",
+      "/usr/share/httpd/noindex"
+    ],
+    "file_integrity_max_file_size_mb": 5,
+    "source": "vps-sentinel config print-default on the tested binary"
+  },
+  "cleanup": {
+    "lab_containers_remaining": [],
+    "production_containers_preserved": [
+      "openlist-douyin",
+      "zephyr-ssh"
+    ],
+    "lab_networks_or_links_remaining": [],
+    "lab_iptables_rules_remaining": [],
+    "build_image_removed": "rust:1-bookworm",
+    "host_disk_after": "18 GiB used / 16 GiB available"
+  },
+  "evidence_archive": {
+    "remote_path": "/root/sentinel-lab-20261003/evidence-2026-10-03.tar.gz",
+    "sha256": "dec0f978fc48bd91dfa98094decc9565e4af201432176fd8b7e4a8e402bf5fb5"
+  },
+  "not_covered": [
+    "Real internet source address; the external-shaped source used reserved range 11.254.253.0/24 inside container namespaces.",
+    "auditd/eBPF probes: brief credential reads and short-lived outbound connections remain negative coverage probes.",
+    "Panel cross-node overwrite, config backup permissions and first-baseline trust (review R1/R2/R10).",
+    "Daemon running in the host network namespace, and capacity/load benchmarks."
+  ]
+}

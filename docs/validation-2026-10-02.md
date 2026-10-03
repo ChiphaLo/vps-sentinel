@@ -1,5 +1,7 @@
 # Validation / 合并验证 — 2026-10-02
 
+> Later container-attack validation: the [2026-10-03 report](validation-2026-10-03.md) covers real SSH/HTTP attacks, the host-published-port path and 19 post-compromise fixtures on the same fork `main`; this document remains the record for the merge, dependency and panel checks.
+
 On hyvps (Debian 13, x86_64), the candidate for [PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) completed the checks below. The PR was merged into `main` at [`b43a700`](https://github.com/ChiphaLo/vps-sentinel/commit/b43a7006b2eef9e458822d1825fed420b987e034). Its Git tree, `b7d6ebaa5c9c554374a9dee9eb52003bbb8adb94`, exactly matches the tested candidate. Dependency audits then identified additional fixes; the updated lockfiles and frontend dependencies were revalidated and published at [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) as described below. The merged tree identifies the first validation stage, not the final dependency versions.
 
 本次完整执行了仓库测试、两个 Linux 构建环境、安装回归、面板检查和隔离攻击实验，并修复了发现的两个实际问题，并更新存在安全公告的依赖。测试范围内没有失败或尚未修复的已发现 bug；这不能证明所有环境和输入下绝对没有 bug。日期按 Asia/Hong_Kong 记录。

@@ -2,7 +2,7 @@
 
 面向 Linux VPS 的轻量 Rust 入侵信号监控：提供证据与告警、可选来源 IP 封禁，以及多服务器安全面板。
 
-[English](README.en.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-02.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
+[English](README.en.md) · [部署教程](docs/deployment.zh-CN.md) · [实测报告](docs/validation-2026-10-03.md) · [安全增强 / PR #1](https://github.com/ChiphaLo/vps-sentinel/pull/1) · [上游项目](https://github.com/cryptoli/vps-sentinel)
 
 [![Fork CI](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ChiphaLo/vps-sentinel/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -78,6 +78,17 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
 
 ## 已验证的结果
 
+**2026-10-03** 在 hyvps 上对 `main`（`26941c29`）执行容器攻防实测：从独立容器发起真实 SSH/HTTP 攻击，并向已取得 root 的目标容器植入 19 类惰性寄生夹具：
+
+| 检查 | 结果 |
+| --- | --- |
+| 构建与测试 | Debian/bookworm 工作区 548 项通过、0 失败、1 项宿主专用跳过；格式检查、严格 Clippy 与 locked release 构建通过。 |
+| 外部攻击 | 真实 SSH 失败与 HTTP 探测分别被识别为 `SSH-003`、`WEB-001` 并自动封禁；验证了阻断、手动解封与 TTL 到期清理。 |
+| 宿主发布端口 | 保留真实来源的外网形态流量经发布端口仍可被封禁；同网桥经代理转发的来源会被改写成网桥网关，私有来源按设计不封禁。 |
+| 容器内寄生夹具 | 14 类恶意样本夹具（提权位、capability、cron/systemd/`ld.so.preload` 持久化、反向 shell 配置行、WebShell、假矿工、UID 0 账户、日志清空、sshd 配置弱化等）全部检出；`/tmp` 落地载荷未检出。 |
+| 恶意文件系统 | FIFO、自指符号链接、512 MiB 与不可读文件均未造成扫描挂起；大文件删除后的一次 10 秒扫描被复现为容器 overlay 写回的 I/O 抖动。 |
+| 资源采样 | 15 秒、5 秒扫描间隔采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.74%。 |
+
 **2026-10-02** 在 hyvps（Debian 13 x86_64）验证合并候选版本，并核对合并文件树一致；之后的依赖安全更新 [`7051a26`](https://github.com/ChiphaLo/vps-sentinel/commit/7051a267d94b5b8e83a1438962ebaaf795ec771b) 另行完成了完整验证：
 
 | 检查 | 结果 |
@@ -91,7 +102,7 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
 | 依赖审计 | npm 0 项；RustSec 无非豁免漏洞和警告，保留报告中已说明的 RSA 例外。 |
 | 资源采样 | 每 5 秒扫描，15 秒采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.74%。 |
 
-这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-02.md)。
+这是带日期的宿主实测记录，不代表当前 GitHub Actions 已全绿。资源占用取决于监控范围和负载，CPU 不含子进程。方法、边界和复现入口见 [实测报告](docs/validation-2026-10-03.md)。
 
 ## 检测与处置边界
 

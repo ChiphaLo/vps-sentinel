@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### ChiphaLo fork — container attack validation (2026-10-03)
+
+- [Dated validation](docs/validation-2026-10-03.md): `26941c29` built with 548 workspace tests passing; container lab 19/19, 14 malware-shaped fixtures detected, published-port blocking verified for preserved public sources, and FIFO/large-file robustness plus daemon RSS/CPU re-sampled.
+
 ### ChiphaLo fork — merged 2026-10-02
 
 - Extend audit/Docker facts and bounded file permission/capability drift detection, persistence coverage and isolated attack-response validation.

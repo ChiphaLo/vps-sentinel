@@ -35,7 +35,7 @@ Notifier implementations must:
 
 ## Isolated validation
 
-Use the [container lab](docs/container-lab.zh-CN.md) only against disposable fixtures you own. Keep network, PID and firewall effects inside the lab; do not target third-party systems. Separate actual detection and IP blocking from harness cleanup. The [2026-10-02 report](docs/validation-2026-10-02.md) records the tested scope and telemetry gaps.
+Use the [container lab](docs/container-lab.zh-CN.md) only against disposable fixtures you own. Keep network, PID and firewall effects inside the lab; do not target third-party systems. Separate actual detection and IP blocking from harness cleanup. The [2026-10-03 report](docs/validation-2026-10-03.md) records the tested scope and telemetry gaps.
 
 ## Code Style
 
