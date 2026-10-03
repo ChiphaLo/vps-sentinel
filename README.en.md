@@ -101,6 +101,8 @@ Audit rules need configured audit telemetry. The built-in runtime probe is optio
 
 A normally isolated container observes itself, not the host. The runtime image and lab do not imply host monitoring without an explicit visibility/deployment design.
 
+Unfixed code and coverage findings are recorded in the [security review (Chinese)](docs/security-review-2026-10-03.zh-CN.md).
+
 ## Privacy, contributing and upstream
 
 Local SQLite storage is the default; panel upload and notification channels require configuration. Signed panel telemetry redacts raw evidence, paths, commands and server identifiers. Confirmed attacker IPs may appear on the public blocklist. The panel is not a remote SSH/command plane; privileged operations remain local.
