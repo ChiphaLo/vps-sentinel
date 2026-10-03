@@ -2,7 +2,7 @@
 
 On hyvps (Debian 13.7, x86_64, Docker 26.1.5, iptables 1.8.11 nf_tables) the fork's `main` at [`26941c29`](https://github.com/ChiphaLo/vps-sentinel/commit/26941c29131feff5957590c52d8137383518268a) was built and then attacked from a separate disposable container. The tested binary was `vps-sentinel 0.3.1`, 20,264,704 bytes, SHA-256 `afdd0ed552d5759985c8bcc333d420fecd0ee3ce1cb65774f34fcb757f37e561`; the `git archive` source used for the build hashes to `be523319691b3ff843601a41a608e5e8f5685d35bac9454398f45e27691fb760`. The work tree was clean before and after the run, and no repository file was changed by the experiments.
 
-本次在 hyvps 上对 `main`（`26941c29`）执行构建检查与容器实测：真实 SSH/HTTP 攻击、宿主发布端口封禁路径、容器内 19 类惰性寄生夹具、恶意文件系统韧性与资源采样。全部攻击只发生在一次性容器和一次性测试地址内；生产容器 `openlist-douyin`、`zephyr-ssh` 未受影响，实验结束后主机防火墙、路由、地址与镜像均恢复到实验前状态。本报告只记录实际运行到的结果；未运行的部分按“证据不足”保留，见文末。
+本次在 hyvps 上对 `main`（`26941c29`）执行构建检查与容器实测：真实 SSH/HTTP 攻击、宿主发布端口封禁路径、容器内 19 类惰性夹具（15 类寄生样本 + 4 类恶意输入）、恶意文件系统韧性与资源采样。全部攻击只发生在一次性容器和一次性测试地址内；生产容器 `openlist-douyin`、`zephyr-ssh` 未受影响，实验结束后主机防火墙、路由、地址与镜像均恢复到实验前状态。本报告只记录实际运行到的结果；未运行的部分按“证据不足”保留，见文末。
 
 [Machine-readable evidence / JSON 证据](validation-2026-10-03.json) · [2026-10-02 report / 上一次完整验证](validation-2026-10-02.md) · [2026-10-03 security review / 当日代码审查](security-review-2026-10-03.zh-CN.md)
 
@@ -14,7 +14,7 @@ On hyvps (Debian 13.7, x86_64, Docker 26.1.5, iptables 1.8.11 nf_tables) the for
 | Formatting and lints | `cargo fmt --check` and `cargo clippy --workspace --all-targets --locked -- -D warnings` passed. |
 | Release build | `cargo build --locked --release` passed in a disposable `rust:1-bookworm` container; the container and image were removed afterwards. |
 | Isolated container lab | [container lab](container-lab.zh-CN.md) `run.py`: 19/19 cases passed, `result=passed`, host firewall hash unchanged. |
-| Extended probes | [`extended_probes.py`](../tests/container_lab/extended_probes.py): host-published-port path, hostile filesystem and 12 further parasite fixtures completed with no harness error; host firewall, routes and addresses unchanged. |
+| Extended probes | [`extended_probes.py`](../tests/container_lab/extended_probes.py): host-published-port path, hostile filesystem inputs and 12 further fixture cases (8 malware-shaped, 4 hostile-input) completed with no harness error; host firewall, routes and addresses unchanged. |
 | Crash / hang / collector errors | None observed; every scan reported `collector_errors: []` and the daemon exited with code 0 on SIGINT. |
 
 Alpine/musl, installer, panel, dependency-audit and browser checks were **not** rerun in this container-focused run; the [2026-10-02 report](validation-2026-10-02.md) remains the record for those. 本轮只做容器攻防验证，没有重跑 Alpine、安装器、面板、依赖审计和浏览器检查。
@@ -45,7 +45,7 @@ The same service was republished with `docker run -p <bridge-gateway>:18480:8080
 
 ## Post-compromise fixtures / 容器内寄生夹具
 
-The target container was treated as already rooted. Every fixture is inert: miner lookalikes are copies of `/bin/sleep`, webshells and reverse-shell lines are text that is never executed, and persistence files are written but never loaded. Nineteen fixture cases were tested (7 in the container lab, 12 in the extended probes).
+The target container was treated as already rooted. Every fixture is inert: miner lookalikes are copies of `/bin/sleep`, webshells and reverse-shell lines are text that is never executed, and persistence files are written but never loaded. Nineteen fixture cases were tested: 7 malware-shaped fixtures in the container lab plus 12 in the extended probes (8 malware-shaped, 4 hostile-input). Fourteen of the 15 malware-shaped cases were detected — the miner lookalike process is probed by both harnesses, and the only miss is the dropped `/tmp` payload that never became a process.
 
 | Fixture | Detection |
 | --- | --- |

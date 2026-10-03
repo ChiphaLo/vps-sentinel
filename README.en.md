@@ -78,14 +78,14 @@ For notifications, optional panel upload, service operations and all install opt
 
 ## Verified results
 
-On **2026-10-03**, `main` at `26941c29` was attacked from a separate container on hyvps while 19 inert post-compromise fixture cases were placed into a rooted target container:
+On **2026-10-03**, `main` at `26941c29` was attacked from a separate container on hyvps while 19 inert fixture cases (15 malware-shaped, 4 hostile-input) were placed into a rooted target container:
 
 | Check | Result |
 | --- | --- |
 | Build and tests | Debian/bookworm workspace: 548 passed, 0 failed, 1 host-only test skipped; formatting, strict Clippy and the locked release build passed. |
 | External attacks | Real SSH failures and HTTP probes raised `SSH-003` and `WEB-001` and were blocked; explicit unblock and TTL expiry cleanup were verified. |
 | Host-published port | External-shaped traffic with a preserved source address was still blocked through the published port; a same-bridge relayed source is rewritten to the bridge gateway and, being private, is not auto-blocked. |
-| Post-compromise fixtures | All 14 malware-shaped fixtures were detected (SUID/capability, cron/systemd/`ld.so.preload` persistence, reverse-shell profile line, WebShell, miner lookalikes, UID 0 account, log truncation, weakened sshd config); a dropped `/tmp` payload was not. |
+| Post-compromise fixtures | 14 of 15 malware-shaped fixtures were detected (SUID/capability, cron/systemd/`ld.so.preload` persistence, reverse-shell profile line, WebShell, miner lookalike process, UID 0 account, log truncation, weakened sshd config); the miss is a dropped `/tmp` payload that was never executed. The four hostile-input fixtures (FIFO, self-referential symlink, 512 MiB file, unreadable file) raised no finding and did not hang a scan. |
 | Hostile filesystem | FIFO, symlink loop, 512 MiB and unreadable files caused no scan hang; the 10 s scan after deleting the large file reproduced as container overlay write-back jitter. |
 | Resource sample | Daemon RSS about 12.3 MiB and agent CPU about 0.74% of one core (15-second sample, 5-second scan interval). |
 

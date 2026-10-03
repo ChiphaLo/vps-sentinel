@@ -20,4 +20,4 @@ FILE-005/FILE-006 在既有 FIM 路径上检测权限、uid/gid 和 Linux `secur
 
 每次扫描的 JSON、规则、响应结果、镜像大小、扫描时间、RSS 和实验清理结果保存到 `--output`。实验结束会删除它创建的容器、网络和镜像，并检查宿主防火墙恢复；现有业务容器不受影响。
 
-扩展探测脚本 [extended_probes.py](../tests/container_lab/extended_probes.py)（英文说明见脚本头部）在同样的隔离前提下补充三组测量：宿主发布端口路径（同网桥经代理转发 vs 外部形态源地址）、恶意文件系统韧性（FIFO、自指符号链接、512 MiB 文件、不可读文件）以及 12 类额外寄生夹具（`ld.so.preload`、shell 配置反向 shell 行、systemd 单元、cron spool、假矿工进程、`/tmp` 落地载荷、sshd 配置弱化、日志清空等）。该脚本只把端口发布到实验网桥网关，不发布到 `0.0.0.0`；实测结论与边界记录在 [2026-10-03 验证报告](validation-2026-10-03.md)。
+扩展探测脚本 [extended_probes.py](../tests/container_lab/extended_probes.py)（英文说明见脚本头部）在同样的隔离前提下补充测量：宿主发布端口路径（同网桥经代理转发 vs 外部形态源地址），以及 12 类额外夹具（8 类寄生样本：`ld.so.preload`、shell 配置反向 shell 行、systemd 单元、cron spool、假矿工进程、`/tmp` 落地载荷、sshd 配置弱化、日志清空；4 类恶意文件系统输入：FIFO、自指符号链接、512 MiB 文件、不可读文件）。该脚本只把端口发布到实验网桥网关，不发布到 `0.0.0.0`；实测结论与边界记录在 [2026-10-03 验证报告](validation-2026-10-03.md)。

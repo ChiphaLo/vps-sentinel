@@ -4,7 +4,7 @@
 
 ### ChiphaLo fork — container attack validation (2026-10-03)
 
-- [Dated validation](docs/validation-2026-10-03.md): `26941c29` built with 548 workspace tests passing; container lab 19/19, 14 malware-shaped fixtures detected, published-port blocking verified for preserved public sources, and FIFO/large-file robustness plus daemon RSS/CPU re-sampled.
+- [Dated validation](docs/validation-2026-10-03.md): `26941c29` built with 548 workspace tests passing; container lab 19/19 cases, 14 of 15 malware-shaped fixtures detected (the miss is a dropped `/tmp` payload that was never executed), published-port blocking verified for preserved public sources, and FIFO/large-file robustness plus daemon RSS/CPU re-sampled.
 
 ### ChiphaLo fork — merged 2026-10-02
 

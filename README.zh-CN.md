@@ -78,14 +78,14 @@ curl -fsSL https://raw.githubusercontent.com/ChiphaLo/vps-sentinel/main/update.s
 
 ## 已验证的结果
 
-**2026-10-03** 在 hyvps 上对 `main`（`26941c29`）执行容器攻防实测：从独立容器发起真实 SSH/HTTP 攻击，并向已取得 root 的目标容器植入 19 类惰性寄生夹具：
+**2026-10-03** 在 hyvps 上对 `main`（`26941c29`）执行容器攻防实测：从独立容器发起真实 SSH/HTTP 攻击，并向已取得 root 的目标容器植入 19 类惰性夹具（15 类寄生样本 + 4 类恶意输入）：
 
 | 检查 | 结果 |
 | --- | --- |
 | 构建与测试 | Debian/bookworm 工作区 548 项通过、0 失败、1 项宿主专用跳过；格式检查、严格 Clippy 与 locked release 构建通过。 |
 | 外部攻击 | 真实 SSH 失败与 HTTP 探测分别被识别为 `SSH-003`、`WEB-001` 并自动封禁；验证了阻断、手动解封与 TTL 到期清理。 |
 | 宿主发布端口 | 保留真实来源的外网形态流量经发布端口仍可被封禁；同网桥经代理转发的来源会被改写成网桥网关，私有来源按设计不封禁。 |
-| 容器内寄生夹具 | 14 类恶意样本夹具（提权位、capability、cron/systemd/`ld.so.preload` 持久化、反向 shell 配置行、WebShell、假矿工、UID 0 账户、日志清空、sshd 配置弱化等）全部检出；`/tmp` 落地载荷未检出。 |
+| 容器内寄生夹具 | 15 类寄生样本夹具中 14 类检出（提权位、capability、cron/systemd/`ld.so.preload` 持久化、反向 shell 配置行、WebShell、假矿工进程、UID 0 账户、日志清空、sshd 配置弱化等）；未检出的是从未执行的 `/tmp` 落地载荷。另 4 类恶意输入夹具（FIFO、自指符号链接、512 MiB 文件、不可读文件）按预期无告警且未造成扫描挂起。 |
 | 恶意文件系统 | FIFO、自指符号链接、512 MiB 与不可读文件均未造成扫描挂起；大文件删除后的一次 10 秒扫描被复现为容器 overlay 写回的 I/O 抖动。 |
 | 资源采样 | 15 秒、5 秒扫描间隔采样中 daemon RSS 约 12.3 MiB，进程 CPU 约占单核 0.74%。 |
 
